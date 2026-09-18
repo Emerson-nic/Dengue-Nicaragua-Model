@@ -1,0 +1,7 @@
+#r enviroment
+.RData
+.Rhistory
+.Rproj.user/
+
+#html
+report.html
