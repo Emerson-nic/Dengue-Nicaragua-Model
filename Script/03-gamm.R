@@ -110,7 +110,7 @@ print(rho_estimado)
 
 ## model 1 bam - are there one? ----
 
-model_magnitud<- bam(
+model_magnitud<- mgcv::bam(
   (dengue_total > 0) ~
     Niño +
     s(casos_semana_anterior, k=40) +
@@ -192,7 +192,7 @@ DHARMa::testZeroInflation(res_dharma_presencia)
 
 ## model 2 bam - how many? ----
 
-model_magnitud <- bam(
+model_magnitud <- mgcv::bam(
   dengue_total ~
     Niño +
     s(casos_semana_anterior, k=50) +
@@ -210,7 +210,7 @@ model_magnitud <- bam(
   knots = list(isoweek = c(1, 53)),
   # rho = 0.87,
   # AR.start = non_zeros$inicio_serie,
-  discrete = F,
+  discrete = T,
   select = T
 )
 
@@ -233,13 +233,9 @@ mgcv::qq.gam(model_magnitud, rep = 500, level = 0.95)
 #residuals
 res_dharma_model_magnitud <- DHARMa::simulateResiduals(
   model_magnitud,
-  # n = 1000,
+  n = 1000,
   plot = TRUE
 )
-
-#   - QQ plot: points on the diagonal [x]
-#   - resid vs fitted: flat cloud without a pattern [x]
-#   - uniformidad: straight line on [0, 1] [x]
 
 DHARMa::testResiduals(res_dharma_model_magnitud)
 DHARMa::testUniformity(res_dharma_model_magnitud)
@@ -251,3 +247,68 @@ DHARMa::testCategorical(res_dharma_model_magnitud, non_zeros$DEPARTAMENTO)
 DHARMa::plotResiduals(res_dharma_model_magnitud, non_zeros$Year)
 DHARMa::plotResiduals(res_dharma_model_magnitud, non_zeros$week)
 
+##model 3 ----
+
+m_anom <- mgcv::bam(
+  dengue_total ~
+    Niño +
+    s(casos_semana_anterior, k=50) +
+    # s(week, bs = "cc", k = 20) +
+    s(Temperature, k = 5) +
+    s(week, DEPARTAMENTO, bs = "fs", k = 10, m = 1) +
+    # s(Rain, k = 5) +
+    # s(Year, k = 9) +
+    s(Rain_acc3, k = 10),
+  # s(DEPARTAMENTO, bs = "re"),
+  family = tw(),
+  # family = nb(),
+  data = non_zeros,
+  method = "fREML",
+  knots = list(isoweek = c(1, 53)),
+  # rho = 0.87,
+  # AR.start = non_zeros$inicio_serie,
+  discrete = F,
+  select = T
+)
+
+summary(m_anom)
+gam.check(m_anom)
+
+concurvity(model_magnitud, full = FALSE)$worst
+concurvity(m_anom, full = FALSE)$worst
+
+#autocorrelation
+itsadug::acf_resid(
+  m_anom,
+  split_pred = "DEPARTAMENTO",
+  main = "ACF residuos por departamento"
+)
+
+res_dharma_m_anom <- DHARMa::simulateResiduals(
+  m_anom,
+  n = 5000,
+  refit = FALSE,
+  plot = TRUE
+)
+
+DHARMa::testResiduals(res_dharma_m_anom)
+DHARMa::testUniformity(res_dharma_m_anom)
+DHARMa::testDispersion(res_dharma_m_anom)
+DHARMa::testOutliers(res_dharma_m_anom)
+
+DHARMa::testCategorical(res_dharma_m_anom, non_zeros$DEPARTAMENTO)
+DHARMa::plotResiduals(res_dharma_m_anom, non_zeros$week)
+
+DHARMa::testTemporalAutocorrelation(
+  res_dharma_m_anom,
+  time = non_zeros$calendar_start_date
+)
+
+DHARMa::plotResiduals(
+  res_dharma_m_anom,
+  form = non_zeros$calendar_start_date
+)
+
+DHARMa::plotResiduals(res_dharma_m_anom, non_zeros$Temperature)
+DHARMa::plotResiduals(res_dharma_m_anom, non_zeros$Rain_acc3)
+DHARMa::plotResiduals(res_dharma_m_anom, non_zeros$casos_semana_anterior)
