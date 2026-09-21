@@ -233,7 +233,7 @@ mgcv::qq.gam(model_magnitud, rep = 500, level = 0.95)
 #residuals
 res_dharma_model_magnitud <- DHARMa::simulateResiduals(
   model_magnitud,
-  n = 1000,
+  # n = 1000,
   plot = TRUE
 )
 
