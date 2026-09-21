@@ -49,9 +49,6 @@ dengue <- dengue_tsbl %>%
   dplyr::ungroup()
 
 non_zeros <- dengue_tsbl %>%
-  dplyr::filter(dengue_total > 0)
-
-non_zeros <- non_zeros %>%
   tibble::as_tibble() %>%
   dplyr::mutate(week = lubridate::isoweek(calendar_start_date)) %>%
   dplyr::arrange(DEPARTAMENTO, calendar_start_date) %>%
@@ -70,6 +67,7 @@ dengue <- dengue %>%
   dplyr::ungroup()
 
 non_zeros <- non_zeros %>%
+  dplyr::filter(dengue_total > 0) %>%
   tidyr::drop_na(Rain_acc3) %>%
   dplyr::mutate(inicio_serie = dplyr::row_number() == 1) %>%
   dplyr::ungroup() %>%
@@ -197,21 +195,23 @@ DHARMa::testZeroInflation(res_dharma_presencia)
 model_magnitud <- bam(
   dengue_total ~
     Niño +
-    s(log(casos_semana_anterior), k=20) +
-    s(week, bs = "cc", k = 20) +
+    s(casos_semana_anterior, k=50) +
+    # s(week, bs = "cc", k = 20) +
     s(Temperature, k = 5) +
-    #s(week, DEPARTAMENTO, bs = "fs", k = 10) +
+    s(week, DEPARTAMENTO, bs = "fs", k = 10, m = 1) +
     # s(Rain, k = 5) +
-    s(Year, k = 9) +
-    s(Rain_acc3, k = 8) +
-    s(DEPARTAMENTO, bs = "re"),
+    # s(Year, k = 9) +
+    s(Rain_acc3, k = 10),
+    # s(DEPARTAMENTO, bs = "re"),
   family = tw(),
+  # family = nb(),
   data = non_zeros,
   method = "fREML",
-  knots = list(week = c(0, 53)),
+  knots = list(isoweek = c(1, 53)),
   # rho = 0.87,
   # AR.start = non_zeros$inicio_serie,
-  discrete = TRUE
+  discrete = F,
+  select = T
 )
 
 summary(model_magnitud)
@@ -227,6 +227,8 @@ itsadug::acf_resid(
   split_pred = "DEPARTAMENTO",
   main = "ACF residuos por departamento"
 )
+
+mgcv::qq.gam(model_magnitud, rep = 500, level = 0.95)
 
 #residuals
 res_dharma_model_magnitud <- DHARMa::simulateResiduals(
@@ -248,3 +250,4 @@ DHARMa::testOutliers(res_dharma_model_magnitud)
 DHARMa::testCategorical(res_dharma_model_magnitud, non_zeros$DEPARTAMENTO)
 DHARMa::plotResiduals(res_dharma_model_magnitud, non_zeros$Year)
 DHARMa::plotResiduals(res_dharma_model_magnitud, non_zeros$week)
+
