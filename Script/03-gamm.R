@@ -312,3 +312,71 @@ DHARMa::plotResiduals(
 DHARMa::plotResiduals(res_dharma_m_anom, non_zeros$Temperature)
 DHARMa::plotResiduals(res_dharma_m_anom, non_zeros$Rain_acc3)
 DHARMa::plotResiduals(res_dharma_m_anom, non_zeros$casos_semana_anterior)
+
+
+##model 4 ----
+
+m_linear_casos <- mgcv::bam(
+  dengue_total ~
+    Niño +
+    # Temperature+
+    # Rain_acc3+
+    s(casos_semana_anterior, k = 5) +
+    # s(week, bs = "cc", k = 20) +
+    s(Temperature, k = 5) +
+    s(week, DEPARTAMENTO, bs = "fs", k = 10, m = 3) +
+    # s(Rain, k = 5) +
+    # s(Year, k = 9) +
+    s(Rain_acc3, k = 10),
+  # s(DEPARTAMENTO, bs = "re"),
+  family = tw(),
+  # family = nb(),
+  data = non_zeros,
+  method = "fREML",
+  knots = list(isoweek = c(1, 53)),
+  discrete = T,
+  select = T
+)
+
+summary(m_linear_casos)
+gam.check(m_linear_casos)
+
+concurvity(model_magnitud, full = FALSE)$worst
+concurvity(m_linear_casos, full = FALSE)$worst
+
+#autocorrelation
+itsadug::acf_resid(
+  m_linear_casos,
+  # split_pred = "DEPARTAMENTO",
+  main = "ACF residuos por departamento"
+)
+
+res_dharma_m_linear_casos <- DHARMa::simulateResiduals(
+  m_linear_casos,
+  n = 5000,
+  refit = FALSE,
+  plot = TRUE
+)
+
+DHARMa::testResiduals(res_dharma_m_linear_casos)
+DHARMa::testUniformity(res_dharma_m_linear_casos)
+DHARMa::testDispersion(res_dharma_m_linear_casos)
+DHARMa::testOutliers(res_dharma_m_linear_casos)
+
+DHARMa::testCategorical(res_dharma_m_linear_casos, non_zeros$DEPARTAMENTO)
+DHARMa::plotResiduals(res_dharma_m_linear_casos, non_zeros$week)
+
+DHARMa::testTemporalAutocorrelation(
+  res_dharma_m_linear_casos,
+  time = non_zeros$calendar_start_date
+)
+
+DHARMa::plotResiduals(
+  res_dharma_m_linear_casos,
+  form = non_zeros$calendar_start_date
+)
+
+DHARMa::plotResiduals(res_dharma_m_linear_casos, non_zeros$Temperature)
+DHARMa::plotResiduals(res_dharma_m_linear_casos, non_zeros$Rain_acc3)
+DHARMa::plotResiduals(res_dharma_m_linear_casos, non_zeros$casos_semana_anterior)
+
