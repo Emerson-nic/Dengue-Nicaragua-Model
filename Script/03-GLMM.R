@@ -91,6 +91,8 @@ print(tabla_umbrales, n = 30)
 
 dengue_etapa1 <- dengue_preparado
 
+readr::write_csv(dengue_etapa1,"Data/Csv/Etapas_dengue.csv")
+
 dengue_etapa2 <- dengue_preparado %>%
   dplyr::filter(is_brote == "1")
 
@@ -119,16 +121,19 @@ modelo_etapa_1 <- glmmTMB(
 
 summary(modelo_etapa_1)
 
+#or ratios
 effect_model_1 <- broom.mixed::tidy(
   modelo_etapa_1,
   effects = "fixed",
+  component = "cond",
   exponentiate = TRUE,
   conf.int = TRUE
 ) |>
   dplyr::mutate(
-    cambio_pct = (estimate - 1) * 100,
-    ic_bajo_pct = (conf.low - 1) * 100,
-    ic_alto_pct = (conf.high - 1) * 100
+    cambio_odds_porc  = (estimate - 1) * 100,
+    ic_bajo_odds_porc = (conf.low - 1) * 100,
+    ic_alto_odds_porc = (conf.high - 1) * 100
+    #odd_porc is in percentage term
   )
 
 if(F){
@@ -226,6 +231,7 @@ DHARMa::testResiduals(res_dharma_etapa1)
 DHARMa::testDispersion(res_dharma_etapa1)
 DHARMa::testUniformity(res_dharma_etapa1)
 DHARMa::testOutliers(res_dharma_etapa1)
+DHARMa::testCategorical(res_dharma_etapa1, catPred = dengue_etapa1$Niño)
 
 # DHARMa::plotResiduals(res_dharma_etapa1, form = dengue_etapa1$Rain_acc3)
 # DHARMa::plotResiduals(res_dharma_etapa1, form = dengue_etapa1$Temperature)
@@ -233,8 +239,8 @@ DHARMa::testOutliers(res_dharma_etapa1)
 
 #autocorrelation
 
-var_espacial_1 <- glmmTMB::VarCorr(modelo_etapa_2)
-matriz_ar1_1 <- attr(var_espacial_2$cond$DEPARTAMENTO.1, "correlation")
+var_espacial_1 <- glmmTMB::VarCorr(modelo_etapa_1)
+matriz_ar1_1 <- attr(var_espacial_1$cond$DEPARTAMENTO.1, "correlation")
 inercia_ar1_1 <- matriz_ar1_1[1, 2]
 
 cat("rho:",inercia_ar1_1)
@@ -283,9 +289,9 @@ effect_model_2 <- broom.mixed::tidy(
   conf.int = TRUE
 ) |>
   dplyr::mutate(
-    cambio_pct = (estimate - 1) * 100,
-    ic_bajo_pct = (conf.low - 1) * 100,
-    ic_alto_pct = (conf.high - 1) * 100
+    cambio_porc = (estimate - 1) ,
+    ic_bajo_porc = (conf.low - 1) ,
+    ic_alto_porc = (conf.high - 1)
   )
 
 if(F){
@@ -398,6 +404,7 @@ DHARMa::plotResiduals(res_dharma_etapa2, form = fitted(modelo_etapa_2), quantreg
 DHARMa::plotQQunif(res_dharma_etapa2)
 DHARMa::plotResiduals(res_dharma_etapa2, form = fitted(modelo_etapa_2))
 DHARMa::testCategorical(res_dharma_etapa2, catPred = dengue_etapa2$Niño)
+DHARMa::testCategorical(res_dharma_etapa2, catPred = dengue_etapa2$DEPARTAMENTO)
 
 #autocorrelation
 
@@ -417,7 +424,229 @@ DHARMa::testTemporalAutocorrelation(
   time = unique(dengue_etapa2$calendar_start_date)
 )
 
-## model 3 hurdle----
+### sentibility analisis model 2 ----
+
+m2_disp1 <- update(modelo_etapa_2, dispformula = ~ ln_casos_semana_anterior)
+m2_disp2 <- update(modelo_etapa_2, dispformula = ~ DEPARTAMENTO)
+m2_noar <- update(modelo_etapa_2, . ~ . - ar1(tiempo_factor + 0 | DEPARTAMENTO))
+
+dengue_etapa2$exceso0 <- dengue_etapa2$exceso_brote - 1
+m2_exc <- update(modelo_etapa_2, exceso0 ~ ., family = nbinom2, data = dengue_etapa2)
+
+#convergence
+lista_modelos <- list(
+  "0_base (tnbinom2 + AR1)" = modelo_etapa_2,
+  "1_disp ~ lag" = m2_disp1,
+  "2_disp ~ DEPARTAMENTO" = m2_disp2,
+  "3_sin AR1" = m2_noar,
+  "4_exceso (nbinom2 + AR1)" = m2_exc
+)
+
+convergencia <- purrr::imap_dfr(lista_modelos, \(m, nm) {
+  tibble::tibble(
+    modelo = nm,
+    pdHess = isTRUE(m$sdr$pdHess),   # TRUE = Hessiana OK
+    AIC = AIC(m),
+    logLik = as.numeric(logLik(m))
+  )
+})
+print(convergencia)
+
+BIC(modelo_etapa_2, m2_disp1, m2_disp2, m2_noar#, m2_exc
+    )
+
+#coefficient table
+sens_model_2 <- purrr::imap_dfr(lista_modelos, \(m, nm) {
+  broom.mixed::tidy(
+    m,
+    effects = "fixed",
+    component = "cond",           
+    exponentiate = TRUE,
+    conf.int = TRUE
+  ) |>
+    dplyr::mutate(modelo = nm)
+}) |>
+  dplyr::filter(term != "(Intercept)") |>
+  dplyr::mutate(
+    cambio_porc  = estimate - 1,
+    ic_bajo_porc = conf.low - 1,
+    ic_alto_porc = conf.high - 1,
+    signif_95    = conf.low > 1 | conf.high < 1   
+  )
+
+tabla_sens <- sens_model_2 |>
+  dplyr::mutate(
+    irr_ic = sprintf("%.3f (%.3f-%.3f)", estimate, conf.low, conf.high)
+  ) |>
+  dplyr::select(term, modelo, irr_ic) |>
+  tidyr::pivot_wider(names_from = modelo, values_from = irr_ic)
+print(tabla_sens, width = Inf)
+
+
+resumen_estabilidad <- sens_model_2 |>
+  dplyr::filter(modelo != "4_exceso (nbinom2 + AR1)") |> 
+  dplyr::group_by(term) |>
+  dplyr::summarise(
+    irr_min        = min(estimate),
+    irr_max        = max(estimate),
+    rango_relativo = (irr_max - irr_min) / irr_min,
+    mismo_signo    = all(estimate > 1) | all(estimate < 1),
+    signif_en_todos = all(signif_95),
+    .groups = "drop"
+  )
+print(resumen_estabilidad)
+
+#forest plot ----
+fig_sens_2 <- ggplot2::ggplot(
+  sens_model_2,
+  ggplot2::aes(x = estimate, y = modelo, xmin = conf.low, xmax = conf.high)
+) +
+  ggplot2::geom_vline(xintercept = 1, linetype = "dashed", colour = "grey40") +
+  ggplot2::geom_pointrange() +
+  ggplot2::facet_wrap(~ term, scales = "free_x") +
+  ggplot2::labs(
+    x = "IRR (IC 95%)", y = NULL,
+    title = "Sensibilidad de los efectos - Modelo 2 (magnitud del brote)"
+  ) +
+  ggplot2::theme_bw()
+print(fig_sens_2)
+
+## model 3 dispformula ----
+
+modelo_disp <- glmmTMB(
+  dengue_total ~ 
+    Niño + 
+    Rain_acc3 +              
+    Temperature +            
+    ln_casos_semana_anterior +
+    (1 | DEPARTAMENTO) +
+    ar1(tiempo_factor + 0 | DEPARTAMENTO),
+  dispformula = ~ ln_casos_semana_anterior,
+  family = truncated_nbinom2,
+  data = dengue_etapa2
+)
+
+summary(modelo_disp)
+
+
+effect_model_2 <- broom.mixed::tidy(
+  modelo_disp,
+  effects = "fixed",
+  exponentiate = TRUE,
+  conf.int = TRUE
+) |>
+  dplyr::mutate(
+    cambio_porc = (estimate - 1) ,
+    ic_bajo_porc = (conf.low - 1) ,
+    ic_alto_porc = (conf.high - 1)
+  )
+
+#pseudo R-squared
+# print(performance::r2(modelo_disp)) #this crash my pc 
+
+#vif
+print(performance::check_collinearity(modelo_disp))
+
+#icc
+# print(performance::icc(modelo_disp))
+
+#impact plot
+
+plot_lluvia_disp <- ggeffects::ggpredict(modelo_disp, 
+                                    terms = "Rain_acc3 [all]",
+                                    type = "fixed"
+                                    # interval = "prediction"
+                                    #bias_correction = TRUE #another crash
+) |> 
+  plot() +
+  ggplot2::labs(
+    title = "Impacto de la Precipitación en la Magnitud del Brote",
+    x = "Lluvia Acumulada - 3 semanas (mm)",
+    y = "Casos Esperados de Dengue"
+  ) +
+  ggplot2::theme_minimal()
+
+# print(plot_lluvia)
+
+plot_temp_disp <- ggeffects::ggpredict(modelo_disp, 
+                                  terms = "Temperature [all]",
+                                  #bias_correction = TRUE
+) |> 
+  plot() +
+  ggplot2::labs(
+    title = "Impacto de la Temperatura en la Magnitud del Brote",
+    x = "Temperatura Promedio (°C)",
+    y = "Casos Esperados de Dengue"
+  ) +
+  ggplot2::theme_minimal()
+
+# print(plot_temp)
+
+plot_casos_disp <- ggeffects::ggpredict(modelo_disp, 
+                                   terms = "ln_casos_semana_anterior [all]",
+                                   #bias_correction = TRUE
+) |> 
+  plot() +
+  ggplot2::labs(
+    title = "Impacto de Casos en la Magnitud del Brote",
+    x = "Casos de la Semena Anterior (ln)",
+    y = "Casos Esperados de Dengue"
+  ) +
+  ggplot2::theme_minimal()
+
+#marge plots
+
+efectos_disp <- plot_lluvia + plot_temp + plot_casos +
+  patchwork::plot_layout(ncol = 3) +
+  patchwork::plot_annotation(
+    # title = "Impacto Microclimático en la Magnitud de Brotes de Dengue",
+    # subtitle = "Predicciones marginales poblacionales (GLMM nbinom2)",
+    theme = ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", size = 14))
+  )
+
+print(efectos_disp)
+
+# ggplot2::ggsave(
+#   filename = "Modelo_2_Impacto_Climatico_Magnitud.pdf",
+#   plot = figura_publicacion,
+#   width = 12,
+#   height = 5,
+#   dpi = 300,
+#   bg = "white"
+# )
+
+#residuals
+
+set.seed(57971643) #if u are femboy call
+res_dharma_disp <- DHARMa::simulateResiduals(
+  modelo_disp,
+  n = 1000, 
+  plot = TRUE
+)
+
+DHARMa::testResiduals(res_dharma_disp)
+DHARMa::testCategorical(res_dharma_etapa2, catPred = dengue_etapa2$Niño)
+DHARMa::testCategorical(res_dharma_etapa2, catPred = dengue_etapa2$DEPARTAMENTO)
+
+#autocorrelation
+
+var_disp <- glmmTMB::VarCorr(modelo_disp)
+matriz_ar1_disp <- attr(var_disp$cond$DEPARTAMENTO.1, "correlation")
+inercia_ar1_disp <- matriz_ar1_disp[1, 2]
+
+cat("rho:",inercia_ar1_disp)
+
+res_temporales_disp <- DHARMa::recalculateResiduals(
+  res_dharma_disp, 
+  group = dengue_etapa2$calendar_start_date 
+)
+
+DHARMa::testTemporalAutocorrelation(
+  res_temporales_disp, 
+  time = unique(dengue_etapa2$calendar_start_date)
+)
+
+## model 4 hurdle----
 
 # modelo_hurdle <- glmmTMB(
 #   dengue_total ~ 
@@ -440,3 +669,6 @@ DHARMa::testTemporalAutocorrelation(
 # summary(modelo_hurdle)
 
 #It is better not to use model 3
+
+
+
