@@ -11,8 +11,6 @@ pacman::p_load(tidyverse,
                ggeffects,
                broom.mixed,
                DHARMa, #evaluation of residuals
-               mgcViz, #DHARMa use mgcViz
-              # gratia, #tools for extracting smoothed and derivative functions for spines
                patchwork, #combining charts  
                itsadug, #Dharma needs this
                # xml2,
