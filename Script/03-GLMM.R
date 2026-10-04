@@ -6,10 +6,10 @@ options(repos = c(CRAN = "https://packagemanager.posit.co/cran/2026-09-16"))
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(tidyverse,
-               glmmTMB, 
-               performance,
-               ggeffects,
-               broom.mixed,
+               glmmTMB, #generalized linear mixed model (GLMM)
+               performance, #model diagnostics and evaluation metrics (vif)
+               ggeffects,#marginal predictions and confidence interval estimation plot
+               broom.mixed, #tidying model outputs into clean tabular formats for coefficients
                DHARMa, #evaluation of residuals
                patchwork, #combining charts  
                itsadug, #Dharma needs this
