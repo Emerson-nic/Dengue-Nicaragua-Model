@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software or code, please cite it as below."
+authors:
+  - family-names: "Lopez"
+    given-names: "Emerson"
+title: "Dengue-Nicaragua-Model: A generalized linear mixed model for dengue outbreak prediction in Nicaragua"
+version: 1.0.0
+date-released: 2026-09-28
+url: "https://github.com/Emerson-nic/Dengue-Nicaragua-Model"
+repository-code: "https://github.com/Emerson-nic/Dengue-Nicaragua-Model"
+keywords:
+  - arbovirus
+  - dengue
+  - econometrics
+  - epidemiology
+  - logit-regression
+  - nicaragua
+  - r
+  - regression-models
+license: MIT
