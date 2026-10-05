@@ -55,7 +55,7 @@ ggplot2::ggsave(
   bg = "white"
 )
 
-rain_plot <- dengue %>%
+# rain_plot <- dengue %>%
   ggplot2::ggplot(aes(x = calendar_start_date, y = Rain)) +
   ggplot2::geom_line(color = "steelblue") +
   ggplot2::facet_wrap(~ DEPARTAMENTO, scales = "free_y", ncol = 3) +
