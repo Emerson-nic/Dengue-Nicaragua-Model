@@ -6,6 +6,7 @@ options(repos = c(CRAN = "https://packagemanager.posit.co/cran/2026-09-16"))
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(tidyverse,
+               igraph,
                DataExplorer, 
                skimr, 
                summarytools,
@@ -45,6 +46,15 @@ dengue_plot <- dengue %>%
 
 print(dengue_plot)
 
+ggplot2::ggsave(
+  filename = "Plots/Dengue.pdf",
+  plot = dengue_plot,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
+
 rain_plot <- dengue %>%
   ggplot2::ggplot(aes(x = calendar_start_date, y = Rain)) +
   ggplot2::geom_line(color = "steelblue") +
@@ -54,6 +64,16 @@ rain_plot <- dengue %>%
 
 print(rain_plot)
 
+ggplot2::ggsave(
+  filename = "Plots/Lluvia.pdf",
+  plot = rain_plot,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
+
+
 temperature_plot <- dengue %>%
   ggplot2::ggplot(aes(x = calendar_start_date, y = Temperature)) +
   ggplot2::geom_line(color = "steelblue") +
@@ -62,6 +82,15 @@ temperature_plot <- dengue %>%
   ggplot2::theme_minimal()
 
 print(temperature_plot)
+
+ggplot2::ggsave(
+  filename = "Plots/Temperatura.pdf",
+  plot = temperature_plot,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
 
 ##seasonality ----
 
