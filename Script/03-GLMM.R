@@ -1,4 +1,4 @@
-#rm(list = ls())
+rm(list = ls())
 
 #load library ---- 
 options(repos = c(CRAN = "https://packagemanager.posit.co/cran/2026-09-16"))
@@ -181,6 +181,8 @@ plot_niño_1 <- ggeffects::ggpredict(modelo_etapa_1,
   ) +
   ggplot2::theme_minimal()
 
+# print(plot_niño_1)
+
 plot_casos_1 <- ggeffects::ggpredict(modelo_etapa_1, 
                                     terms = "ln_casos_semana_anterior [all]",
                                     #bias_correction = TRUE
@@ -193,12 +195,12 @@ plot_casos_1 <- ggeffects::ggpredict(modelo_etapa_1,
   ) +
   ggplot2::theme_minimal()
 
-# print(plot_temp_1)
+# print(plot_casos_1)
 
 #marge plots
 
-efectos_1 <- plot_lluvia_1 + plot_niño_1 + plot_casos_1 + 
-  patchwork::plot_layout(ncol = 3) +
+efectos_1 <- plot_lluvia_1 + plot_niño_1 + 
+  patchwork::plot_layout(ncol = 2) +
   patchwork::plot_annotation(
     # title = "Probabilidad de Detonar un Brote Epidémico de Dengue",
     # subtitle = "Predicciones marginales (Componente Binomial del Hurdle Model)",
@@ -207,14 +209,23 @@ efectos_1 <- plot_lluvia_1 + plot_niño_1 + plot_casos_1 +
 
 print(efectos_1)
 
-# ggplot2::ggsave(
-#   filename = "Modelo_1_Pobabilidad_del_brote.pdf",
-#   plot = figura_publicacion,
-#   width = 12,
-#   height = 5,
-#   dpi = 300,
-#   bg = "white"
-# )
+ggplot2::ggsave(
+  filename = "Plots/Modelo_1_Pobabilidad_del_brote_1.pdf",
+  plot = efectos_1,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
+
+ggplot2::ggsave(
+  filename = "Plots/Modelo_1_Pobabilidad_del_brote_2.pdf",
+  plot = plot_casos_1,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
 
 #residuals
 
@@ -224,6 +235,16 @@ res_dharma_etapa1 <- DHARMa::simulateResiduals(
   n = 1000, 
   plot = TRUE
 )
+
+pdf(
+  file = "Plots/Modelo_1_redual_res.pdf", 
+  width = 12, 
+  height = 5
+)
+
+plot(res_dharma_etapa1)
+
+dev.off()
 
 DHARMa::testResiduals(res_dharma_etapa1)
 DHARMa::testDispersion(res_dharma_etapa1)
