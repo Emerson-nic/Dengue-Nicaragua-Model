@@ -190,7 +190,7 @@ plot_casos_1 <- ggeffects::ggpredict(modelo_etapa_1,
   plot() +
   ggplot2::labs(
     title = "Impacto de Casos en la Probabilidad del Brote",
-    x = "Casos de la Semena Anterior (ln)",
+    x = "Casos de la Semana Anterior (ln)",
     y = "Probabilidad de Brote"
   ) +
   ggplot2::theme_minimal()
