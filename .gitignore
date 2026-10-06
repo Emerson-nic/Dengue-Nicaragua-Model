@@ -10,3 +10,13 @@ README.es.html
 README.html
 
 results.txt
+
+#tex
+main.blg
+main.log
+main.out
+main.aux
+main.bbl
+main.bcf
+main.synctex.gz
+main.run.xml
