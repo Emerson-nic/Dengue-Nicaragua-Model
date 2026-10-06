@@ -1,0 +1,328 @@
+%BUSCO CO-AUTOR
+%compilar con lualatex
+
+\documentclass[11pt,a4paper]{article}
+
+%fuentes (lualatex)
+\usepackage{fontspec}
+\usepackage[spanish,es-nodecimaldot]{babel}
+%margenes 
+\usepackage[margin=2.5cm]{geometry}
+
+%matematica
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+
+%graficos y tablas
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+
+%citas
+\usepackage[backend=biber,style=apa]{biblatex}
+\addbibresource{references.bib}
+
+%hipervinculos
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+%paquetes para codigo
+\usepackage{listings}
+\usepackage{xcolor}
+
+%estilo de R
+\lstdefinestyle{estiloR}{
+	language=R,
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	commentstyle=\color{gray}\itshape,
+	stringstyle=\color{teal},
+	backgroundcolor=\color{gray!8},
+	frame=single,
+	rulecolor=\color{gray!30},
+	breaklines=true,
+	showstringspaces=false,
+	tabsize=2,
+	xleftmargin=1.5cm,
+	xrightmargin=1.5cm
+}
+
+\title{Determinantes Ambientales y Persistencia Temporal en los Brotes de Dengue en Nicaragua (2014–2022)}
+\author{
+	Emerson Lopez \\
+	\texttt{emerson.zeledon.ni@gmail.com} 
+	\and
+	Coautor 
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento presenta la formulación metodológica, especificación matemática, resultados empíricos y análisis de residuales para el modelamiento de la probabilidad de brotes de dengue en los 18 departamentos de Nicaragua durante el período 2014-2022. Utilizando un Modelo Lineal Mixto Generalizado (GLMM) con distribución binomial y función de enlace logit, se incorporaron efectos aleatorios espaciales y una estructura autorregresiva temporal de primer orden ($\text{AR}(1)$) para aislar la inercia epidémica y evaluar el impacto de variables climáticas (precipitación acumulada y temperatura) y el fenómeno de El Niño.
+\end{abstract}
+
+\newpage
+
+\section{Introducción y Definición del Evento}
+
+\section{Revisión de Literatura}
+
+\section{Metodología}
+
+\subsection{Datos}
+
+La base empírica consiste en un panel longitudinal de frecuencia semanal que abarca el período 2014--2022 para las 18 unidades territoriales (departamentos y regiones autónomas) de Nicaragua, acumulando un total de $8\,244$ observaciones útiles. Las coordenadas geográficas de referencia para cada unidad territorial se presentan en la Tabla~\ref{tab:coords_deptos}.
+
+\begin{table}[htbp]
+	\centering
+	\small
+	\caption{Departamentos de Nicaragua y coordenadas geográficas de referencia}
+	\label{tab:coords_deptos}
+	\begin{tabular}{lrr}
+		\toprule
+		\textbf{Departamento / Región} & \textbf{Latitud ($^\circ$N)} & \textbf{Longitud ($^\circ$O)} \\
+		\midrule
+		BILWI & 14.0351 & -83.3888 \\
+		BOACO & 12.4722 & -85.6586 \\
+		CARAZO & 11.8540 & -86.2000 \\
+		CHINANDEGA & 12.6294 & -87.1311 \\
+		CHONTALES & 12.1063 & -85.3645 \\
+		ESTELI & 13.0918 & -86.3538 \\
+		GRANADA & 11.9299 & -85.9560 \\
+		JINOTEGA & 13.0988 & -86.0022 \\
+		LEON & 12.4379 & -86.8780 \\
+		MADRIZ & 13.4667 & -86.5833 \\
+		MANAGUA & 12.1364 & -86.2514 \\
+		MASAYA & 11.9744 & -86.0942 \\
+		MATAGALPA & 12.9256 & -85.9175 \\
+		NUEVA SEGOVIA & 13.6333 & -86.4833 \\
+		REGION AUTONOMA DEL ATLANTICO SUR & 12.0137 & -83.7635 \\
+		RIO SAN JUAN & 11.1097 & -84.7797 \\
+		RIVAS & 11.4372 & -85.8263 \\
+		ZELAYA CENTRAL & 12.0000 & -84.2833 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Los registros epidemiológicos de incidencia de dengue provienen de la plataforma global OpenDengue \parencite{clarke2025opendengue}. A partir de las coordenadas departamentales (Tabla~\ref{tab:coords_deptos}), se extrajeron las series climáticas de temperatura media y precipitación acumulada semanal utilizando la API histórica de Open-Meteo \parencite{openmeteo_historical}\footnote{Para la Región Autónoma del Atlántico Sur se tomaron las coordenadas de Bluefields; para Río San Juan, las de San Carlos; y para Zelaya Central, las del municipio de El Rama.}.
+
+\medskip
+
+La variable explicada corresponde al evento binario de $\text{brote}_{it}$, definida como $1$ en aquellas semanas epidemiológicas donde la incidencia superó el percentil 75 de la distribución histórica departamental, siguiendo el criterio de canal endémico establecido por la \textcite{paho2002modulos}. Por su parte, el conjunto de variables explicativas comprende: la presencia del fenómeno macroclimático de El Niño ($\text{Niño}$), la precipitación acumulada de tres semanas ($\text{Rain\_acc3}$), la temperatura media semanal ($\text{Temperature}$) y la inercia de la carga viral capturada mediante el logaritmo de los casos de la semana epidemiológica anterior ($\text{ln\_casos\_semana\_anterior}$).
+
+\medskip
+
+Para modelar la probabilidad de brote controlando simultáneamente la heterogeneidad espacial y la dependencia serial, se formuló un Modelo Lineal Mixto Generalizado (GLMM) con función de enlace logit implementado mediante la librería \texttt{glmmTMB} \parencite{brooks2017glmmtmb} en R:
+
+\begin{lstlisting}[style=estiloR]
+	modelo_1 <- glmmTMB(
+	is_brote ~
+	Niño + 
+	Rain_acc3 +             
+	Temperature +            
+	ln_casos_semana_anterior +
+	(1 | DEPARTAMENTO) +  # Intercepto aleatorio espacial
+	ar1(tiempo_factor + 0 | DEPARTAMENTO), # Inercia temporal AR(1)
+	family = binomial(link = "logit"),
+	data = dengue_etapa1
+	)
+\end{lstlisting}
+
+
+\section{Especificación Matemática}
+
+El modelo combina una regresión logística para el evento binario de brote con efectos aleatorios espaciales y una matriz de correlación temporal.
+
+\subsection{Componente Aleatorio y Función de Enlace}
+Dado que la variable de respuesta $\text{brote}$ es binaria ($0 = \text{No hay brote}$, $1 = \text{Sí hay brote}$), el modelo asume que el evento $Y_{it}$ (para el departamento $i$ en la semana $t$) sigue una distribución de la familia Binomial:
+\begin{equation}
+Y_{it} \sim \text{Binomial}(1, p_{it})
+\end{equation}
+
+Para conectar la probabilidad esperada de brote ($p_{it}$) con las variables explicativas sin arrojar predicciones fuera del intervalo $[0, 1]$, se utiliza la función de enlace Logit:
+\begin{equation}
+\text{logit}(p_{it}) = \ln\left(\frac{p_{it}}{1-p_{it}}\right) = \eta_{it}
+\end{equation}
+
+\subsection{Predictor Lineal ($\eta_{it}$)}
+La ecuación completa del modelo, que proyecta el riesgo combinando el clima y la inercia epidemiológica, se define como:
+\begin{equation}
+\begin{aligned}
+	\text{logit}(p_{it}) &= \beta_0 + \beta_1 \text{Niño}_t + \beta_2 \text{Rain\_acc3}_{it} + \beta_3 \text{Temperature}_{it} \\
+	&\quad + \beta_4 \text{ln\_casos\_semana\_anterior}_{i,t-1} + u_i + \varepsilon_{it}
+\end{aligned}
+\end{equation}
+
+\subsection{Parámetros y Estructura de Error}
+El modelo desglosa sus parámetros en tres componentes principales:
+\begin{itemize}
+    \item \textbf{Efectos Fijos ($\beta$):} 
+    \begin{itemize}
+        \item $\beta_0$: Intercepto global del modelo.
+        \item $\beta_1, \beta_2, \beta_3, \beta_4$: Coeficientes paramétricos que miden el impacto direccional y multiplicativo (en escala logarítmica) de la época climática, la lluvia acumulada, la temperatura y la carga viral de la semana anterior.
+    \end{itemize}
+    \item \textbf{Efectos Aleatorios ($u_i$):} 
+    \begin{equation}
+    u_i \sim \mathcal{N}(0, \sigma_u^2)
+    \end{equation}
+    Representa el intercepto aleatorio por departamento, especificado como \texttt{(1 | DEPARTAMENTO)}. Absorbe la variabilidad no observada entre regiones, permitiendo que cada departamento de Nicaragua posea su propia línea base de riesgo endémico.
+    \item \textbf{Autocorrelación Temporal Residual ($\varepsilon_{it}$):} 
+    Para controlar la dependencia serial dentro de cada unidad geográfica, los residuos se modelan como un proceso autorregresivo de orden 1 ($\text{AR}(1)$), especificado en \texttt{glmmTMB} como \texttt{ar1(tiempo\_factor + 0 | DEPARTAMENTO)}:
+    \begin{equation}
+    	\varepsilon_{it} = \rho \varepsilon_{i,t-1} + \eta_{it}, \quad \text{donde} \quad \eta_{it} \sim \mathcal{N}(0, \sigma_\eta^2)
+    \end{equation}
+    El parámetro $\rho$ absorbe la persistencia epidemiológica y evita la inflación artificial de significancia en las variables climáticas exógenas.
+\end{itemize}
+
+\section{Resultados}
+
+\subsection{Estimaciones del Modelo y Odds Ratios}
+
+\begin{table}[htbp]
+	\centering
+	\small
+	\caption{Resultados del Modelo GLMM Binomial con Inercia AR(1)}
+	\label{tab:modelo_completo}
+	\begin{tabular}{lcccc}
+		\toprule
+		\textbf{Efectos Fijos} & \textbf{Estimación ($\beta$)} & \textbf{Error Est.} & \textbf{$z$} & \textbf{Valor $p$} \\
+		\midrule
+		(Intercepto)                        & $-22.250$ & $1.641$  & $-13.56$ & $< 0.001$ \\
+		El Niño (Presencia)                 & $0.398$   & $0.142$  & $2.80$   & $0.005$   \\
+		Precipitación acum. ($\text{Rain\_acc3}$) & $0.003$   & $<0.001$ & $6.36$   & $< 0.001$ \\
+		Temperatura ($\text{Temperature}$)  & $0.095$   & $0.054$  & $1.76$   & $0.078$   \\
+		Casos previos ($\text{ln\_casos\_semana\_anterior}$) & $4.316$ & $0.146$ & $29.50$ & $< 0.001$ \\
+		\midrule
+		\textbf{Efectos Aleatorios} & \textbf{Varianza} & \textbf{Desv. Est.} & \multicolumn{2}{c}{\textbf{Parámetro}} \\
+		\midrule
+		Intercepto por Departamento ($\sigma_u^2$) & $5.597$ & $2.366$ & \multicolumn{2}{c}{--} \\
+		Residuo temporal AR(1) ($\sigma_\varepsilon^2$) & $0.691$ & $0.831$ & \multicolumn{2}{c}{$\rho = 0.96$} \\
+		\midrule
+		\multicolumn{5}{l}{\textbf{Bondad de Ajuste:} AIC = $3685.4$ \quad BIC = $3741.6$ \quad Obs = $8244$ \quad Grupos = $18$} \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Los resultados de la estimación del modelo de brote se resumen en la Tabla \ref{tab:resultados}.
+
+\begin{table}[H]
+\centering
+\caption{Odds Resultados}
+\label{tab:resultados}
+\begin{tabular}{lcccc}
+\hline
+Variable & Cambio en Odds (\%) \\
+\hline
+(Intercepto) & No Interpretable \\
+Niño (Presencia) & $+48.9\%$ \\
+Precipitación Acumulada & $+0.31\%$ por mm \\
+Temperatura & $+9.95\%$ \\
+Casos Previos & - \\
+\hline
+\end{tabular}
+\end{table}
+
+Todas las variables evaluadas resultaron estadísticamente significativas al nivel del 95\%, a excepción de la temperatura media, la cual mostró significancia marginal ($p = 0.078$, significativa al 90\%). Este comportamiento térmico es consistente con la eco-epidemiología de zonas tropicales bajas: Nicaragua presenta temperaturas ambientales estables a lo largo del año que se mantienen de forma continua dentro del intervalo térmico óptimo para la supervivencia del vector y el acortamiento del periodo de incubación viral (aproximadamente 24--30~$^\circ$C) \parencite{mordecai2017detecting}. 
+
+\medskip
+
+En cuanto al fenómeno de El Niño, en semanas con presencia del fenómeno, los odds de brote aumentan en un $48.9\%$ (IC 95\%: $12.6\%$ a $96.8\%$), manteniendo las demás variables constantes. Por cada milímetro adicional de precipitación acumulada en tres semanas, los odds de brote se incrementan en un $0.31\%$.
+
+Para la variable de inercia epidémica ($\text{ln\_casos\_semana\_anterior}$), el coeficiente $\beta = 4.316$ indica un riesgo multiplicativo masivo. Evaluando un factor de duplicación de casos respecto a la semana anterior mediante la fórmula $\text{OR} = (\text{factor})^\beta$:
+\begin{equation}
+\text{OR} = 2^{4.316} \approx 20
+\end{equation}
+Es decir, duplicar los casos de la semana previa se asocia con un aumento de aproximadamente $20$ veces en los odds de desencadenar un brote (IC 95\%: 16 a 24). La estructura temporal reveló un parámetro autorregresivo ($\rho$) del $96\%$, la variable tiene inercia epidémica masiva donde el contagio semanal hereda casi la totalidad del comportamiento inmediato anterior en el mismo departamento.
+
+\subsection{Análisis Gráfico de Efectos}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../Plots/Modelo_1_Pobabilidad_del_brote_1.pdf}
+\caption{Relación entre precipitación acumulada e impacto del El Niño.}
+\label{fig:brote_1}
+\end{figure}
+
+Como se observa en la Figura \ref{fig:brote_1} panel izquierdo, a medida que aumenta la precipitación acumulada, la probabilidad de detonar un brote crece de forma no lineal (exponencial). En el tramo inicial (0 a 250 mm), el modelo muestra alta certeza estadística (banda estrecha); hacia valores extremos ($750$ mm o más), la incertidumbre se amplía en forma de embudo.
+
+\medskip 
+
+En el panel derecho, en ausencia de El Niño, la probabilidad media de brote arranca en un nivel basal cercano al $3\%$. Con El Niño activo, asciende hacia el umbral del $5\%$. Las bandas de confianza amplias reflejan que, aunque es un factor de riesgo sistemático, no es determinista por sí solo. 
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../Plots/Modelo_1_Pobabilidad_del_brote_2.pdf}
+\caption{Efecto de Casos de la Semana Anterior}
+\label{fig:dengue_plot}
+\end{figure}
+
+Por su parte, la Figura \ref{fig:dengue_plot} muestra un marcado umbral de quiebre: con casos rezagados por debajo de $3.5$ en escala logarítmica, la probabilidad de brote es cercana al $0\%$. Entre los valores $4$ y $5$, la curva experimenta una pendiente casi vertical, disparando la probabilidad hasta saturarse al $100\%$ cuando se superan los $6$ puntos logarítmicos.
+
+\section{Residuales y Diagnóstico del Modelo}
+
+\begin{table}[htbp]
+	\centering
+	\small
+	\caption{Diagnóstico de Multicolinealidad (VIF y Tolerancia)}
+	\label{tab:vif}
+	\begin{tabular}{lccccc}
+		\toprule
+		\textbf{Covariable} & \textbf{VIF} & \textbf{IC 95\% VIF} & \textbf{VIF Aj.} & \textbf{Tolerancia} & \textbf{IC 95\% Tol.} \\
+		\midrule
+		Niño & 1.03 & [1.02, 1.07] & 1.02 & 0.97 & [0.94, 0.98] \\
+		Precipitación acum. & 1.14 & [1.11, 1.17] & 1.07 & 0.88 & [0.85, 0.90] \\
+		Temperatura & 1.16 & [1.13, 1.19] & 1.08 & 0.86 & [0.84, 0.88] \\
+		Casos previos & 1.02 & [1.01, 1.06] & 1.01 & 0.98 & [0.94, 0.99] \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+La evaluación de colinealidad mediante los factores de inflación de varianza (VIF) arrojó valores inferiores a $1.16$ para todas las covariables, descartando problemas de multicolinealidad.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{../Plots/Modelo_1_redual_res.pdf}
+    \caption{Diagnóstico de residuales mediante simulación DHARMa.}
+    \label{residuales}
+\end{figure}
+
+Para validar los supuestos distribucionales y la ausencia de sobredispersión, se aplicó la prueba de simulación de residuales vía \texttt{DHARMa} \parencite{hartig2022dharma} (Figura \ref{residuales}). Los residuales pasan las pruebas de no desviación significativa ($p = 0.20$), no sobredispersión ($p = 0.28$) y ausencia de valores atípicos ($p = 0.08$), manteniendo cuantiles alineados.
+
+\medskip
+
+Adicionalmente, la evaluación de autocorrelación temporal sobre los residuales agrupados por fecha de inicio mediante la prueba de Durbin-Watson arrojó un estadístico $\text{DW} = 1.8819$ con un valor $p = 0.2054$, no existe autocorrelación espacial ni temporal remanente. 
+
+\section{Discusión}
+
+
+El modelo propuesto demostró un ajuste riguroso al superar las pruebas de simulación de residuales, sobredispersión y autocorrelación temporal. No obstante, para futuras líneas de investigación se sugiere profundizar en la calibración del umbral epidemiológico para Nicaragua, evaluando alternativas locales al percentil 75 propuesto por la OPS.
+
+\medskip
+
+Con fines de transparencia metodológica, cabe mencionar que durante la fase exploratoria de este escrito se intentó modelar directamente el recuento continuo de casos de dengue, evaluando los periodos de mayor intensidad epidémica mediante datos filtrados y truncados. Dicha aproximación fue descartada del análisis principal al no alcanzar la robustez estadística. El modelo descartado presentó desviaciones severas y desalineación en los cuantiles de los residuales simulados vía \texttt{DHARMa}. Se priorizó la especificación binaria del evento de brote, la cual asegura estabilidad numérica, control de errores y aplicabilidad directa para sistemas de alerta temprana.
+
+\medskip
+
+Para futuros investigadores que deseen retomar el modelado continuo de casos durante fases epidémicas agudas, se recomienda transformaciones de escala. Los datos procesados, el código del modelo presentado y los scripts se encuentran abiertos bajo licencia MIT en el repositorio de \href{https://github.com/Emerson-nic/Dengue-Nicaragua-Model/tree/main}{GitHub}.
+
+\section{Conclusiones}
+
+Este estudio demuestra que la probabilidad de que un departamento en Nicaragua detone un brote de dengue responde a una interacción entre la memoria epidemiológica local y choques climáticos exógenos. Al aislar la elevada persistencia del contagio semanal mediante una estructura autorregresiva ($\rho = 0.96$), se evidenció que las fases cálidas de El Niño y la acumulación de precipitaciones en tres semanas actúan como detonantes ambientales independientes y estadísticamente robustos. En contraste, la temperatura ambiente opera como una condición permisiva relativamente estable que, al mantenerse dentro de los rangos óptimos para el vector a lo largo del año, ejerce una influencia marginal en las transiciones a brote epidémico.
+
+\medskip
+
+En términos operativos, estos hallazgos fundamentan la viabilidad de incorporar rezagos de precipitación acumulada y pronósticos del ENSO en los sistemas de vigilancia epidemiológica subnacional. Dado que la dinámica del dengue se encuentra fuertemente dominada por la inercia semanal de casos, el monitoreo continuo de anomalías hídricas ofrece una ventana de anticipación valiosa para focalizar las intervenciones entomológicas antes de que la carga viral supere los umbrales críticos de alarma departamental.
+
+\printbibliography
+
+\end{document}
