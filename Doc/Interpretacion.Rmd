@@ -43,7 +43,7 @@ La definición del evento de brote `is_brote` se estableció aislando las semana
 
 ```{r modelo}
 modelo_etapa_1 <- glmmTMB(
-  is_brote ~
+  brote ~
     Niño + 
     Rain_acc3 +             
     Temperature +            

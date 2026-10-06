@@ -40,7 +40,7 @@ dplyr::glimpse(dengue_etapa1)
     ## $ ln_casos_semana_anterior <dbl> 0.0000000, 0.0000000, 0.6931472, 1.0986123, 1…
     ## $ tiempo_factor            <fct> 2014-01-19, 2014-01-26, 2014-02-02, 2014-02-0…
     ## $ threshold                <dbl> 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 2…
-    ## $ is_brote                 <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+    ## $ brote                    <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
 
 # Resumen del modelo
 
@@ -52,7 +52,7 @@ de la Salud (OPS).
 
 ``` r
 modelo_etapa_1 <- glmmTMB(
-  is_brote ~
+  brote ~
     Niño + 
     Rain_acc3 +             
     Temperature +            
@@ -68,7 +68,7 @@ summary(modelo_etapa_1)
 
     ##  Family: binomial  ( logit )
     ## Formula:          
-    ## is_brote ~ Niño + Rain_acc3 + Temperature + ln_casos_semana_anterior +  
+    ## brote ~ Niño + Rain_acc3 + Temperature + ln_casos_semana_anterior +  
     ##     (1 | DEPARTAMENTO) + ar1(tiempo_factor + 0 | DEPARTAMENTO)
     ## Data: dengue_etapa1
     ## 
