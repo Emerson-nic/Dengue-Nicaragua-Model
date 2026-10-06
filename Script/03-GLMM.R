@@ -67,7 +67,7 @@ dengue_preparado <- dengue_tsbl %>%
   dplyr::group_by(DEPARTAMENTO) %>%
   dplyr::mutate(
     threshold = floor(quantile(dengue_total, 0.75, na.rm = TRUE)),
-    is_brote = as.factor(ifelse(dengue_total > threshold, 1, 0))
+    brote = as.factor(ifelse(dengue_total > threshold, 1, 0))
   ) %>%
   dplyr::ungroup()
 
@@ -79,8 +79,8 @@ tabla_umbrales <- dengue_preparado %>%
     min_casos = min(dengue_total, na.rm = TRUE),
     median_casos = median(dengue_total, na.rm = TRUE),
     max_casos = max(dengue_total, na.rm = TRUE),
-    n_brotes = sum(is_brote == "1", na.rm = TRUE),
-    pct_brotes = round(100 * mean(is_brote == "1", na.rm = TRUE), 1),
+    n_brotes = sum(brote == "1", na.rm = TRUE),
+    pct_brotes = round(100 * mean(brote == "1", na.rm = TRUE), 1),
     .groups = "drop"
   ) %>%
   dplyr::arrange(dplyr::desc(threshold))
@@ -92,7 +92,7 @@ dengue_etapa1 <- dengue_preparado
 readr::write_csv(dengue_etapa1,"Data/Csv/Etapas_dengue.csv")
 
 dengue_etapa2 <- dengue_preparado %>%
-  dplyr::filter(is_brote == "1")
+  dplyr::filter(brote == "1")
 
 dengue_etapa2 <- dengue_etapa2 %>%
   dplyr::mutate(
@@ -106,7 +106,7 @@ dengue_etapa2 <- dengue_etapa2 %>%
 ## model 1 stage 1 ----
 
 modelo_etapa_1 <- glmmTMB(
-  is_brote ~
+  brote ~
     Niño + 
     Rain_acc3 +             
     Temperature +            
@@ -161,7 +161,7 @@ plot_lluvia_1 <- ggeffects::ggpredict(modelo_etapa_1,
 ) |> 
   plot() +
   ggplot2::labs(
-    title = "Impacto de la Precipitación en la Magnitud del Brote",
+    title = "Impacto de la Precipitación en la Probabilidad del Brote",
     x = "Lluvia Acumulada - 3 semanas (mm)",
     y = "Probabilidad de Brote"
   ) +
@@ -175,7 +175,7 @@ plot_niño_1 <- ggeffects::ggpredict(modelo_etapa_1,
 ) |> 
   plot() +
   ggplot2::labs(
-    title = "Impacto del Niño en la Magnitud del Brote",
+    title = "Impacto del Niño en la Probabilidad del Brote",
     x = "Evento Climatico del Niño (1 para Epoca del Niño)",
     y = "Probabilidad de Brote"
   ) +
@@ -189,7 +189,7 @@ plot_casos_1 <- ggeffects::ggpredict(modelo_etapa_1,
 ) |> 
   plot() +
   ggplot2::labs(
-    title = "Impacto de Casos en la Magnitud del Brote",
+    title = "Impacto de Casos en la Probabilidad del Brote",
     x = "Casos de la Semena Anterior (ln)",
     y = "Probabilidad de Brote"
   ) +
