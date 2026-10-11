@@ -68,6 +68,58 @@ dengue <- dengue_na %>%
 
 message("date range starts from 2014-01-05 to 2022-11-06")
 
+dengue_tsbl <- dengue %>%
+  dplyr::mutate(DEPARTAMENTO = factor(DEPARTAMENTO)) %>%
+  tsibble::as_tsibble(key = DEPARTAMENTO, index = calendar_start_date, regular = TRUE) %>%
+  tsibble::fill_gaps(.full = TRUE) %>%
+  tsibble::group_by_key() %>%
+  dplyr::mutate(
+    dengue_total = imputeTS::na_interpolation(dengue_total, option = "linear"),
+  ) %>%
+  dplyr::ungroup() 
+
+#with this interpolation the total is 8316 (before 8280)
+
+#ONI 
+
+Sys.setlocale("LC_TIME", "C") 
+
+sst_url <- "https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for"
+                             
+lineas <- readLines(sst_url)
+lineas <- lineas[grepl("^\\s*[0-9]{2}[A-Z]{3}[0-9]{4}", lineas)]
+
+sst <- read.table(
+  text = gsub("-", " -", lineas),     
+  col.names = c("fecha", "Nino1+2_sst", "Nino1+2_ssta", 
+                "Nino3_sst", "Nino3_ssta", "Nino34_sst", "Nino34_ssta", 
+                "Nino4_sst", "Nino4_ssta")
+)
+
+nino_sem <- sst %>% 
+  dplyr::mutate(
+    fecha = as.Date(fecha, "%d%b%Y"),
+    calendar_start_date = lubridate::floor_date(fecha, "week", week_start = 7)
+  ) %>%
+  dplyr::arrange(calendar_start_date) 
+
+dplyr::glimpse(nino_sem)
+
+nino <- nino_sem %>%
+  dplyr::mutate(
+    nino34_12s = RcppRoll::roll_mean(Nino34_ssta, n = 12, align = "right", fill = NA)
+  ) %>%
+  dplyr::select(calendar_start_date, nino34_12s)
+
+#note
+if(F){
+  "
+  SSTA_{t} = SST_{t} - SST_{climatology}
+  where the climatology is the historical average
+  
+  "
+}
+
 #extract temperature 
 
 if(F){
@@ -126,7 +178,7 @@ managuita <- test_managua[-(1:6), ]
 #first date starts in 2014-01-05
 #last date is 2022-11-12
 managuita_date <- managuita %>%
-  dplyr::filter(latitude <= zoo::as.Date("2022-11-12"))
+  dplyr::filter(Temperature <= zoo::as.Date("2022-11-12"))
   
 
 ## temperature funcion ----
@@ -139,18 +191,20 @@ descargar_clima_depto <- function(depto, lat, lon) {
     "&daily=temperature_2m_mean,precipitation_sum&timezone=auto&format=csv"
   )
   
-  Sys.sleep(2) #wait 2 seconds
+  Sys.sleep(10) #wait 2 seconds
   
-  readr::read_csv(url, skip = 8,
-                  col_names = FALSE, 
-                  show_col_types = FALSE) %>%
-    dplyr::rename(fecha = X1,
-                  temp = X2, 
-                  rain = X3) %>%
+  lineas <- readr::read_lines(url)
+  
+  lineas_datos <- lineas[grepl("^\\d{4}-\\d{2}-\\d{2}", lineas)]
+  
+  df <- readr::read_csv(
+    I(lineas_datos),
+    col_names = c("fecha", "temp", "rain"),
+    show_col_types = FALSE
+  ) %>%
     dplyr::mutate(
-      fecha = zoo::as.Date(fecha),
-      calendar_start_date = lubridate::floor_date(fecha, unit = "week", 
-                                                  week_start = 7), #sunday
+      fecha = as.Date(fecha),
+      calendar_start_date = lubridate::floor_date(fecha, unit = "week", week_start = 7),
       DEPARTAMENTO = depto
     ) %>%
     dplyr::group_by(DEPARTAMENTO, calendar_start_date) %>%
@@ -159,7 +213,9 @@ descargar_clima_depto <- function(depto, lat, lon) {
       Rain = sum(rain, na.rm = TRUE),
       .groups = "drop"
     ) %>%
-    dplyr::filter(calendar_start_date <= zoo::as.Date("2022-11-12"))
+    dplyr::filter(calendar_start_date <= as.Date("2022-11-12"))
+  
+  return(df)
 }
 
 clima_panel <- purrr::pmap_dfr(
@@ -170,8 +226,12 @@ clima_panel <- purrr::pmap_dfr(
 #margining all dataframes ----
 
 denguito <- dengue %>%
-  dplyr::inner_join(clima_panel, 
+  dplyr::inner_join(clima_panel,
                     by = c("calendar_start_date", "DEPARTAMENTO"))
 
-readr::write_csv(denguito, "Data/Csv/dengue_dataframe.csv")
+denguesote <- denguito %>%
+  dplyr::inner_join(nino, by = "calendar_start_date")
+
+
+readr::write_csv(denguesote, "Data/Csv/dengue_dataframe.csv")
 
