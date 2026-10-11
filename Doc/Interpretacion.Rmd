@@ -30,8 +30,7 @@ pacman::p_load(tidyverse,
 
 ```{r Csv}
 dengue_etapa1 <- readr::read_csv("../Data/Csv/Etapas_dengue.csv") %>%
-  dplyr::mutate(tiempo_factor = as.factor(calendar_start_date),
-                Niño = as.factor(Niño))
+  dplyr::mutate(tiempo_factor = as.factor(calendar_start_date))
   
 
 dplyr::glimpse(dengue_etapa1)
@@ -44,9 +43,10 @@ La definición del evento de brote `is_brote` se estableció aislando las semana
 ```{r modelo}
 modelo_etapa_1 <- glmmTMB(
   brote ~
-    Niño + 
+    nino34_12s + 
     Rain_acc3 +             
-    Temperature +            
+    Temperature +  
+    mes +
     ln_casos_semana_anterior +
     (1 | DEPARTAMENTO) +  #random intercept by department
     ar1(tiempo_factor + 0 | DEPARTAMENTO), 
@@ -57,35 +57,28 @@ modelo_etapa_1 <- glmmTMB(
 summary(modelo_etapa_1)
 ```
 
-Todas la variables menos la temperatura son significativos al 95%,
-marginalmente la temperatura es significativa al 93%, seguramente se
-deba al hecho de que nicaragua presenta una temperatura constante entre
-sus municipios donde los huevos mosquito Aedes aegypti pueden eclocionar
-facilmente. La interpretacion de los betas no es directa asi ya que
+
+Todas la variables menos los meses de marzo, diciembre y El niño son significativos al 95%, marginalmente El Niño es significativa al 92%, seguramente se deba a que las variables mensuales capturen el efecto de este. La interpretacion de los betas no es directa asi ya que
 tienen la forma de $e^\beta$.
 
 La estructura temporal del modelo reveló un parámetro autorregresivo
-(rho) del 96%, el dengue tiene una inercia epidémica masiva, el nivel de
-contagio de una semana hereda casi el total del comportamiento de la
-semana inmediatamente anterior dentro del mismo departamento.
+(rho) del 96%, el dengue tiene una inercia epidémica masiva, el nivel de contagio de una semana hereda casi el total del comportamiento de la semana inmediatamente anterior dentro del mismo departamento.
 
 # Especificación Matemática
 
 El modelo propuesto para predecir la probabilidad de un brote de dengue
 es un Modelo Lineal Mixto Generalizado (GLMM). Esta arquitectura
-econométrica permite combinar la estructura de regresión logística (para
-predecir un evento binario) con efectos aleatorios y una matriz de
-correlación temporal.
+econométrica permite combinar la estructura de regresión logística (para predecir un evento binario) con efectos aleatorios y una matriz de correlación temporal.
 
 Matemáticamente, la arquitectura del modelo se diferentes componentes:
 
 1.  componente aleatorio y funcion de enlace Dado que la variable de
-    respuesta (is_brote) es binaria ($0 = \text{No hay brote}$,
+    respuesta (brote) es binaria ($0 = \text{No hay brote}$,
     $1 = \text{Sí hay brote}$), el modelo asume que el evento $Y_{it}$
     (para el departamento $i$ en la semana $t$) sigue una distribución
     de la familia Binomial: $$Y_{it} \sim \text{Binomial}(1, p_{it})$$
 
-    Para conectar la probabilidad esperada de brote ($p_{it}$) con las
+    <!-- Para conectar la probabilidad esperada de brote ($p_{it}$) con las -->
     variables explicativas sin arrojar predicciones fuera del rango
     $[0, 1]$, se utiliza la función de enlace Logit:
 
