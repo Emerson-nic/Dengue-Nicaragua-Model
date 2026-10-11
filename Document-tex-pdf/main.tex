@@ -58,8 +58,6 @@
 \author{
 	Emerson Lopez \\
 	\texttt{emerson.zeledon.ni@gmail.com} 
-	\and
-	Co-autor ;( gracias dog
 }
 \date{\today}
 
@@ -75,7 +73,38 @@ Este documento presenta la formulación metodológica, especificación matemáti
 
 \section{Introducción y Definición del Evento}
 
+El dengue constituye una de las arbovirosis de mayor propagación y carga para la salud pública global, afectando primordialmente a regiones tropicales y subtropicales de América Latina y el sudeste asiático \parencite{bhatt2013global}. Transmitido predominantemente por hembras infectadas del mosquito \textit{Aedes aegypti}, la dispersión del virus del dengue (DENV, serotipos 1--4) está ligada tanto a factores ecológicos y climáticos como a procesos demográficos y de gestión ambiental urbana \parencite{brady2012refined, morin2013climate}.
+
+\medskip
+
+En Nicaragua, el dengue se comporta como una enfermedad endémica e hiperendémica con manifestaciones epidémicas recurrentes de alta intensidad \parencite{gordon2013pediatric}. Si bien la transmisión basal persiste durante todo el año, la probabilidad de que un territorio transite hacia una fase epidémica descontrolada depende de la conjunción entre la inercia biológica local (la abundancia de individuos infecciosos y mosquitos activos) y choques hidroclimáticos que expanden los reservorios y aceleran la replicación viral \parencite{anyamba2019global, suazo2024abundance}.
+
+\medskip
+
+Desde la perspectiva de la vigilancia epidemiológica, modelar el dengue en zonas hiperendémicas presenta desafíos estadísticos notables. Tradicionalmente, la transición hacia una fase de alerta sanitaria no se evalúa únicamente mediante el conteo absoluto de contagios, sino mediante la identificación de umbrales que superan el comportamiento esperado histórico del territorio \parencite{paho2002modulos}. En este estudio, se define el evento binario de \textit{brote} ($\text{brote}_{it} = 1$) para el departamento $i$ en la semana epidemiológica $t$ cuando el recuento semanal de casos confirmados supera el percentil 75 empírico de su propia serie histórica acumulada durante el período 2014--2022. Esta formulación permite estandarizar la alerta independientemente del tamaño poblacional basal de cada región y capturar la probabilidad condicional de que un territorio detone una fase de alarma sanitaria.
+
+\medskip
+
+El objetivo principal de esta investigación es evaluar el impacto relativo de las precipitaciones acumuladas a corto plazo, la temperatura ambiente y el macroclima modulado por el fenómeno de El Niño sobre la probabilidad de detonar brotes departamentales en Nicaragua durante 2014--2022, aislando la inercia serial.
+
 \section{Revisión de Literatura}
+
+\subsection{Eco-epidemiología del Dengue y Forzantes Climáticos}
+La relación entre las fluctuaciones meteorológicas y la dinámica de transmisión de las arbovirosis está respaldada por una amplia base biofísica \parencite{mordecai2019thermal, morin2013climate}. La temperatura ambiente gobierna parámetros vitales de \textit{Aedes aegypti}, tales como la tasa de picadura, la longevidad del mosquito y el período de incubación extrínseca (EIP) del virus, el cual se contrae significativamente en intervalos térmicos cálidos entre 24~$^\circ$C y 30~$^\circ$C \parencite{mordecai2017detecting}. No obstante, en ecosistemas de tierras bajas tropicales donde las temperaturas permanecen de forma continua dentro de la ventana permisiva para el vector, la variabilidad de la temperatura semanal suele tener un poder explicativo marginal en comparación con los regímenes de precipitación.
+
+Por su parte, la precipitación pluvial actúa como el forzante hídrico primario al propiciar criaderos para los estadios inmaduros (larvas y pupas) \parencite{bowman2016assessing}. Como han demostrado estudios entomológicos recientes en Nicaragua, la acumulación de recipientes y reservorios de almacenamiento hídrico modula directamente la productividad pupal y la densidad de hembras adultas tanto en sectores urbanos como rurales \parencite{suazo2024abundance}. Dado que el ciclo biológico completo (oviposición, desarrollo acuático, emergencia del adulto, ingestión del virus y maduración extrínseca) abarca típicamente entre dos y cuatro semanas, el efecto de las lluvias sobre los contagios humanos se manifiesta con rezagos acumulados y no como una respuesta contemporánea inmediata \parencite{morin2013climate, anyamba2019global}.
+
+A escala sinóptica, las oscilaciones macroclimáticas asociadas al ciclo de El Niño--Oscilación del Sur (ENSO) alteran los patrones pluviométricos y térmicos interanuales en Centroamérica \parencite{anyamba2019global}. Las anomalías positivas persistentes de la temperatura superficial del mar registradas por el Índice Oceánico de El Niño (ONI) \parencite{noaa_cpc_oni} coinciden frecuentemente con sequías estacionales seguidas de eventos pluviales concentrados o aumentos térmicos anómalos, los cuales favorecen el almacenamiento domiciliario de agua y amplifican el riesgo de epidemias masivas, tal como se registró en la región en 2015--2016 y 2019.
+
+\subsection{Evidencia Epidemiológica Previa en Nicaragua}
+La epidemiología del dengue en Nicaragua ha sido objeto de investigaciones longitudinales exhaustivas, primordialmente a través del Estudio de la Cohorte Pediátrica de Dengue (PDCS) en Managua \parencite{gordon2013pediatric, standish2010high}. Dichos estudios han documentado la circulación alternante de serotipos virales, la dinámica de transmisión sintomática frente a infecciones inaparentes y la alta eficiencia en la captación de casos dentro del sistema de vigilancia \parencite{standish2010high}. Asimismo, estudios locales sobre la distribución de \textit{Aedes aegypti} en distritos de Managua demuestran que las poblaciones del vector persisten con elevadas densidades a lo largo de las estaciones seca y lluviosa, amplificadas por prácticas de almacenamiento de agua \parencite{suazo2024abundance}.
+
+A pesar de este sólido cuerpo de literatura biomédica y entomológica, la mayor parte de las investigaciones empíricas nicaragüenses se han concentrado a escala comunitaria o distrital en la capital (Managua). Existe una brecha en la evaluación inferencial multianual que abarque la totalidad de los 18 departamentos y regiones autónomas bajo un diseño de datos de panel, controlando explícitamente tanto la heterogeneidad espacial como la extrema persistencia autorregresiva de la vigilancia semanal.
+
+\subsection{Consideraciones Metodológicas y Dependencia Serial}
+El modelado estadístico de series temporales de vigilancia epidemiológica en paneles geográficos exige abordar dos retos econométricos esenciales: la heterogeneidad estructural no observada entre regiones y la fuerte autocorrelación temporal \parencite{zuur2010protocol}. Ignorar la dependencia serial conduce a estimaciones artificialmente precisas de los errores estándar y genera significancia espuria en las covariables climáticas exógenas.
+
+La integración de Modelos Lineales Mixtos Generalizados (GLMM) con enlace logit \parencite{breslow1993approximate, pinheiro2000mixed} y procesos autorregresivos de primer orden ($\text{AR}(1)$) en las componentes estocásticas permite disociar la inercia interna del brote respecto a los choques climáticos exógenos \parencite{diggle2002analysis}. Al formular el modelo con propósitos confirmatorios e inferenciales guiados por la eco-epidemiología y no por minería algorítmica de especificaciones (\textit{data dredging}) \parencite{shmueli2010explain}, se garantiza una interpretación robusta de las razones de momios asociadas al riesgo de brote.
 
 \section{Metodología}
 
