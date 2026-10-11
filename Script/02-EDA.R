@@ -56,6 +56,7 @@ ggplot2::ggsave(
 )
 
 # rain_plot <- dengue %>%
+rain_plot <- dengue %>%
   ggplot2::ggplot(aes(x = calendar_start_date, y = Rain)) +
   ggplot2::geom_line(color = "steelblue") +
   ggplot2::facet_wrap(~ DEPARTAMENTO, scales = "free_y", ncol = 3) +
@@ -86,6 +87,28 @@ print(temperature_plot)
 ggplot2::ggsave(
   filename = "Plots/Temperatura.pdf",
   plot = temperature_plot,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
+
+nino <- dengue %>%
+  dplyr::distinct(calendar_start_date, nino34_12s) %>% #Nino34_ssta) %>%
+  dplyr::arrange(calendar_start_date)
+
+nino_plot <- nino %>%
+  ggplot2::ggplot(aes(x = calendar_start_date, y = nino34_12s)) +
+  ggplot2::geom_line(color = "steelblue") +
+  # ggplot2::facet_wrap(~ DEPARTAMENTO, scales = "free_y", ncol = 3) +
+  ggplot2::labs(x = NULL, y = "Anomalía de SST en Niño 3.4 (promedio móvil 12 sem, Celsius)") +
+  ggplot2::theme_minimal()
+
+print(nino_plot)
+
+ggplot2::ggsave(
+  filename = "Plots/nino.pdf",
+  plot = nino_plot,
   width = 12,
   height = 5,
   dpi = 300,
