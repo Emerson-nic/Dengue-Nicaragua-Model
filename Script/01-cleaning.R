@@ -20,7 +20,11 @@ pacman::p_load(readxl,
                tidyverse,
                janitor,
                dplyr,
-               zoo
+               zoo,
+               tsibble,
+               imputeTS,
+               lubridate,
+               RcppRoll
 )
 
 #load csv ----
@@ -74,9 +78,13 @@ dengue_tsbl <- dengue %>%
   tsibble::fill_gaps(.full = TRUE) %>%
   tsibble::group_by_key() %>%
   dplyr::mutate(
-    dengue_total = imputeTS::na_interpolation(dengue_total, option = "linear"),
+    dengue_total = imputeTS::na_interpolation(dengue_total, option = "linear")
   ) %>%
-  dplyr::ungroup() 
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    calendar_end_date = calendar_start_date + 6,
+    Year = lubridate::year(calendar_start_date)
+  )
 
 #with this interpolation the total is 8316 (before 8280)
 
@@ -178,7 +186,7 @@ managuita <- test_managua[-(1:6), ]
 #first date starts in 2014-01-05
 #last date is 2022-11-12
 managuita_date <- managuita %>%
-  dplyr::filter(Temperature <= zoo::as.Date("2022-11-12"))
+  dplyr::filter(calendar_start_date <= "2022-11-12")
   
 
 ## temperature funcion ----
@@ -191,15 +199,24 @@ descargar_clima_depto <- function(depto, lat, lon) {
     "&daily=temperature_2m_mean,precipitation_sum&timezone=auto&format=csv"
   )
   
-  Sys.sleep(10) #wait 2 seconds
+  Sys.sleep(10) #wait 10 seconds (API rate limit)
   
   lineas <- readr::read_lines(url)
   
   lineas_datos <- lineas[grepl("^\\d{4}-\\d{2}-\\d{2}", lineas)]
   
+  #fail loudly if the API returns an incomplete/error response
+  stopifnot(length(lineas_datos) > 3000)
+  
   df <- readr::read_csv(
     I(lineas_datos),
     col_names = c("fecha", "temp", "rain"),
+    col_types = readr::cols(
+      fecha = readr::col_date(),
+      temp  = readr::col_double(),
+      rain  = readr::col_double()
+    ),
+    na = c("", "NA", "NaN", "nan"),
     show_col_types = FALSE
   ) %>%
     dplyr::mutate(
@@ -225,11 +242,20 @@ clima_panel <- purrr::pmap_dfr(
 
 #margining all dataframes ----
 
-denguito <- dengue %>%
+denguito <- dengue_tsbl %>%
+  tibble::as_tibble() %>%
+  dplyr::mutate(DEPARTAMENTO = as.character(DEPARTAMENTO)) %>%
   dplyr::inner_join(clima_panel,
                     by = c("calendar_start_date", "DEPARTAMENTO"))
 
 denguesote <- denguito %>%
+  dplyr::group_by(DEPARTAMENTO) %>%
+  dplyr::arrange(calendar_start_date) %>%
+  dplyr::mutate(
+    Temperature = imputeTS::na_interpolation(Temperature, option = "linear"),
+    Rain = imputeTS::na_interpolation(Rain, option = "linear")
+  ) %>%
+  dplyr::ungroup() %>%
   dplyr::inner_join(nino, by = "calendar_start_date")
 
 
