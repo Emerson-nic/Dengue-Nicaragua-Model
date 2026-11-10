@@ -6,7 +6,7 @@ Statistical analysis of factors associated with dengue outbreaks in Nicaragua at
 
 ## What the Model Does
 
-The response variable `brote` is binary. It is defined using the endemic channel approach established by the Pan American Health Organization (PAHO): a week is classified as an outbreak (`1`) when reported cases exceed the 75th percentile of the historical distribution for that specific department.
+The response variable `brote` is binary. It is defined using the endemic channel approach established by the Pan American Health Organization (PAHO): a week is classified as an outbreak (`1`) when reported cases exceed the 75th percentile of the historical distribution for that specific department, calculated over the entire 2014-2022 series and not separately within each epidemiological week.
 
 The model is a Generalized Linear Mixed Model (GLMM) with a logit link function, fitted using `glmmTMB`. It includes monthly seasonality, a long-term annual trend, epidemic inertia, and an AR(1) structure to account for temporal dependence.
 
@@ -26,7 +26,7 @@ Main components:
 
 ## Data
 
-Weekly records from 18 departments for 2014-2022. The gap-filled series has 8,316 department-weeks (462 weeks per department) with no missing values. After constructing lags and the 3-week rainfall accumulation, 8,280 department-weeks remain for the model. Variables include case counts, temperature, rainfall, accumulated rainfall over 3 weeks, the Niño 3.4 anomaly, previous-week cases and their log transform, month, and year.
+Weekly records from 18 departments for 2014-2022. The gap-filled series has 8,316 department-weeks (462 weeks per department) with no missing values. Missing department-weeks were completed with `tsibble::fill_gaps()`, and `dengue_total` was imputed by linear interpolation within each department with `imputeTS::na_interpolation()`; residual gaps in weekly temperature and rainfall were also linearly interpolated within department. After constructing lags and the 3-week rainfall accumulation, 8,280 department-weeks remain for the model. Variables include case counts, temperature, rainfall, accumulated rainfall over 3 weeks, the Niño 3.4 anomaly, previous-week cases and their log transform, month, and year.
 
 ## Main Findings
 
@@ -36,7 +36,7 @@ Weekly records from 18 departments for 2014-2022. The gap-filled series has 8,31
 - Each additional degree Celsius raises the odds by approximately 27% (OR = 1.271; 95% CI: 1.091 to 1.481; p = 0.0021).
 - The AR(1) coefficient is 0.960, meaning transmission in a given week is almost fully inherited from the previous week within the same department.
 - There are no problematic collinearity issues: the maximum VIF is 4.65 for month and 2.17 for year, and adjusted VIFs remain below 2.2.
-- Residual diagnostics with DHARMa pass the uniformity (p = 0.31), dispersion (p = 0.69), and outlier bootstrap (p = 0.12) tests. Durbin-Watson on aggregated residuals gives 1.86 (p = 0.13), so no leftover temporal autocorrelation.
+- Residual diagnostics with DHARMa pass the uniformity (p = 0.31), dispersion (p = 0.69), and outlier (p = 0.387) tests. Durbin-Watson on aggregated residuals gives 1.86 (p = 0.13), so no leftover temporal autocorrelation.
 - These results describe associations and should not be interpreted as a predictive or forecasting model.
 
 ### Authors

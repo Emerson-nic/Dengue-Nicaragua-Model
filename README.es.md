@@ -6,7 +6,7 @@ Análisis estadístico de los factores asociados con brotes de dengue en Nicarag
 
 ## Qué hace el modelo
 
-La variable de respuesta `brote` es binaria. Se construye bajo el enfoque de canal endémico (OPS): una semana se clasifica como brote (`1`) cuando los casos reportados superan el percentil 75 de la distribución histórica para ese departamento específico.
+La variable de respuesta `brote` es binaria. Se construye bajo el enfoque de canal endémico (OPS): una semana se clasifica como brote (`1`) cuando los casos reportados superan el percentil 75 de la distribución histórica para ese departamento específico, calculado sobre toda la serie 2014-2022 y no de forma separada dentro de cada semana epidemiológica.
 
 El modelo es un Modelo Lineal Mixto Generalizado (GLMM) con función de enlace logit, ajustado con `glmmTMB`. Incluye estacionalidad mensual, tendencia anual de largo plazo, inercia epidémica y una estructura AR(1) para capturar la dependencia temporal.
 
@@ -26,7 +26,7 @@ Componentes principales:
 
 ## Datos
 
-Registros semanales de 18 departamentos para 2014-2022. La serie con imputación de brechas tiene 8,316 departamento-semanas (462 semanas por departamento) sin valores faltantes. Después de construir los rezagos y la lluvia acumulada de 3 semanas, quedan 8,280 departamento-semanas para el modelo. Las variables incluyen conteo de casos, temperatura, lluvia, lluvia acumulada en 3 semanas, anomalía de Niño 3.4, casos de la semana anterior y su transformación logarítmica, mes y año.
+Registros semanales de 18 departamentos para 2014-2022. La serie con imputación de brechas tiene 8,316 departamento-semanas (462 semanas por departamento) sin valores faltantes. Las brechas departamento-semana se completaron con `tsibble::fill_gaps()`, y `dengue_total` se imputó por interpolación lineal dentro de cada departamento con `imputeTS::na_interpolation()`; las brechas residuales de temperatura y lluvia semanal también se interpolaron linealmente dentro del departamento. Después de construir los rezagos y la lluvia acumulada de 3 semanas, quedan 8,280 departamento-semanas para el modelo. Las variables incluyen conteo de casos, temperatura, lluvia, lluvia acumulada en 3 semanas, anomalía de Niño 3.4, casos de la semana anterior y su transformación logarítmica, mes y año.
 
 ## Hallazgos principales
 
@@ -36,7 +36,7 @@ Registros semanales de 18 departamentos para 2014-2022. La serie con imputación
 - Cada grado Celsius adicional eleva los odds en aproximadamente 27% (OR = 1.271; IC 95%: 1.091 a 1.481; p = 0.0021).
 - El coeficiente AR(1) es 0.960, lo que significa que la transmisión en una semana dada se hereda casi por completo de la semana anterior dentro del mismo departamento.
 - No hay problemas de colinealidad: el VIF máximo es 4.65 para mes y 2.17 para año, y los VIF ajustados se mantienen por debajo de 2.2.
-- Los diagnósticos de residuales con DHARMa pasan las pruebas de uniformidad (p = 0.31), dispersión (p = 0.69) y valores atípicos con bootstrap (p = 0.12). La prueba de Durbin-Watson sobre residuales agregados da 1.86 (p = 0.13), descartando autocorrelación temporal sobrante.
+- Los diagnósticos de residuales con DHARMa pasan las pruebas de uniformidad (p = 0.31), dispersión (p = 0.69) y valores atípicos (p = 0.387). La prueba de Durbin-Watson sobre residuales agregados da 1.86 (p = 0.13), descartando autocorrelación temporal sobrante.
 - Estos resultados describen asociaciones y no deben interpretarse como un modelo predictivo o de pronóstico.
 
 ### Autores

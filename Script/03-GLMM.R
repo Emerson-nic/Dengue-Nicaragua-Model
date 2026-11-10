@@ -227,6 +227,33 @@ efectos_1 <- plot_lluvia_1 + plot_temperatura_1 + plot_nino_1 +
 print(efectos_1)
 
 ggplot2::ggsave(
+  filename = "Plots/Modelo_1_lluvia_1.pdf",
+  plot = plot_lluvia_1,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
+
+ggplot2::ggsave(
+  filename = "Plots/Modelo_1_temperatura_1.pdf",
+  plot = plot_temperatura_1,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
+
+ggplot2::ggsave(
+  filename = "Plots/Modelo_1_nino_1.pdf",
+  plot = plot_nino_1,
+  width = 12,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
+
+ggplot2::ggsave(
   filename = "Plots/Modelo_1_Pobabilidad_del_brote_1.pdf",
   plot = efectos_1,
   width = 12,
