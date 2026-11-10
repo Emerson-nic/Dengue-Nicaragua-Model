@@ -88,7 +88,7 @@ dengue_tsbl <- dengue %>%
 
 #with this interpolation the total is 8316 (before 8280)
 
-#ONI 
+# Weekly NOAA CPC Niño 3.4 SST anomalies
 
 Sys.setlocale("LC_TIME", "C") 
 
