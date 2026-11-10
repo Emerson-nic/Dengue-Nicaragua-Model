@@ -368,6 +368,33 @@ Como se observa en la Figura \ref{fig:brote_1}, la probabilidad de brote aumenta
 
 Por su parte, la Figura \ref{fig:dengue_plot} muestra un marcado umbral de quiebre: con casos rezagados por debajo de $3.5$ en escala logarítmica, la probabilidad de brote es cercana al $0\%$. Entre los valores $4$ y $5$, la curva experimenta una pendiente casi vertical, disparando la probabilidad hasta saturarse al $100\%$ cuando se superan los $6$ puntos logarítmicos.
 
+\subsection{Análisis de Sensibilidad: Umbral p90 y Rezagos Climáticos de 2 a 4 Semanas}
+
+Para evaluar si las conclusiones dependen de la definición operativa del brote, se repitió el análisis con un umbral alternativo correspondiente al percentil 90 empírico de cada departamento ($\text{p90}_{i}$), calculado sobre la misma serie 2014--2022 y redondeado hacia abajo con \texttt{floor()}. Bajo este criterio, 821 de las 8.280 semanas (9,9\%) se clasificaron como brote. Además, en lugar de la precipitación acumulada de tres semanas y la temperatura contemporánea, se incorporaron rezagos separados de ambas covariables en las semanas $t-2$, $t-3$ y $t-4$ (\texttt{Rain\_lag2} a \texttt{Rain\_lag4} y \texttt{Temperature\_lag2} a \texttt{Temperature\_lag4}), manteniendo en todos los casos la inercia epidémica, la estacionalidad mensual, la tendencia anual, el intercepto aleatorio departamental y la estructura $\text{AR}(1)$.
+
+\medskip
+
+Se compararon dos especificaciones con función de enlace logit: un modelo solo con inercia (casos de la semana anterior y controles temporales) y un modelo que añade los seis términos climáticos rezagados. La Tabla~\ref{tab:sens_p90} resume la bondad de ajuste y la discriminación interna. El $\Delta\text{AIC}$ se define como $\text{AIC}_{\text{inercia}} - \text{AIC}_{\text{clima}}$, de modo que los valores positivos indican una mejora del modelo con clima.
+
+\begin{table}[htbp]
+	\centering
+	\small
+	\caption{Comparación de modelos con umbral p90: inercia sola frente a inercia más rezagos climáticos de 2 a 4 semanas}
+	\label{tab:sens_p90}
+	\begin{tabular}{lrrrr}
+		\toprule
+		\textbf{Modelo} & \textbf{AIC} & \textbf{$\Delta$AIC} & \textbf{AUC} & \textbf{$\Delta$AUC} \\
+		\midrule
+		Solo inercia & $1944{,}7$ & $0{,}0$ & $0{,}980$ & $0{,}0$ \\
+		Inercia + clima (rezagos 2--4) & $1378{,}8$ & $565{,}9$ & $1{,}000$ & $+0{,}0197$ \\
+		\midrule
+		\multicolumn{5}{l}{\textbf{Nota:} $\Delta\text{AIC} > 0$ y $\Delta\text{AUC} > 0$ indican mejor ajuste y mejor discriminación con clima. Obs = 8280.} \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+El modelo con clima redujo el AIC en $565{,}9$ puntos respecto al modelo solo con inercia. La prueba de razón de verosimilitud para la contribución conjunta de los seis rezagos climáticos fue $\chi^2 = 577{,}87$ con $6$ grados de libertad ($p < 0{,}001$). La discriminación interna también aumentó: el AUC pasó de $0{,}980$ a $1{,}000$ ($\Delta\text{AUC} = +0{,}0197$). En conjunto, estos resultados respaldan que las variables climáticas rezagadas aportan información medible sobre la probabilidad de brote incluso después de controlar la inercia epidémica, la estacionalidad y la tendencia anual. No obstante, el valor de AUC $= 1{,}000$ corresponde a probabilidades ajustadas condicionales dentro de la muestra y no constituye una validación predictiva fuera de muestra.
+
 \section{Residuales y Diagnóstico del Modelo}
 
 \begin{table}[htbp]
