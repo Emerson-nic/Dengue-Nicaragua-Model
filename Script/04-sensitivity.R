@@ -20,9 +20,14 @@ pacman::p_load(tidyverse,
 
 dengue <- readr::read_csv("Data/Csv/Etapas_dengue.csv")
 
+#centering constants are fixed on the full series before lag construction
+mean_temperature <- mean(dengue$Temperature, na.rm = TRUE)
+mean_nino <- mean(dengue$nino34_12s, na.rm = TRUE)
+
 # alternative thresholds and climate lags ----
 
 #p75 is already stored in the cleaned file and p90 is built here for comparison
+#climate covariates are rescaled to avoid numerical instability in the p90 models
 dengue_modelos <- dengue %>%
   dplyr::arrange(DEPARTAMENTO, calendar_start_date) %>%
   dplyr::group_by(DEPARTAMENTO) %>%
@@ -30,24 +35,27 @@ dengue_modelos <- dengue %>%
     threshold_p90 = floor(quantile(dengue_total, 0.90, na.rm = TRUE)), #90th percentile as the alternative threshold
     brote_p75 = factor(as.integer(brote == 1)), #outbreak with the original p75 threshold
     brote_p90 = factor(as.integer(dengue_total > threshold_p90)), #outbreak with the p90 threshold
-    Rain_lag2 = dplyr::lag(Rain, 2), #rainfall two weeks before
-    Rain_lag3 = dplyr::lag(Rain, 3), #rainfall three weeks before
-    Rain_lag4 = dplyr::lag(Rain, 4), #rainfall four weeks before
-    Temperature_lag2 = dplyr::lag(Temperature, 2), #temperature two weeks before
-    Temperature_lag3 = dplyr::lag(Temperature, 3), #temperature three weeks before
-    Temperature_lag4 = dplyr::lag(Temperature, 4) #temperature four weeks before
+    Rain_lag2_100 = dplyr::lag(Rain, 2) / 100, #weekly rainfall two weeks before, per 100 mm
+    Rain_lag3_100 = dplyr::lag(Rain, 3) / 100, #weekly rainfall three weeks before, per 100 mm
+    Rain_lag4_100 = dplyr::lag(Rain, 4) / 100, #weekly rainfall four weeks before, per 100 mm
+    Temp_lag2_c = dplyr::lag(Temperature, 2) - mean_temperature, #centered temperature two weeks before
+    Temp_lag3_c = dplyr::lag(Temperature, 3) - mean_temperature, #centered temperature three weeks before
+    Temp_lag4_c = dplyr::lag(Temperature, 4) - mean_temperature #centered temperature four weeks before
   ) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(
     tiempo_factor = factor(calendar_start_date), #time index for the AR(1) structure
     mes = factor(mes), #month factor for seasonality
     year = factor(year), #year factor for the long-term trend
-    year_num = lubridate::year(calendar_start_date) - 2014 #linear year for temporal validation
+    year_num = lubridate::year(calendar_start_date) - 2014, #linear year for temporal validation
+    Rain100 = Rain_acc3 / 100, #accumulated rainfall per 100 mm
+    Temp_c = Temperature - mean_temperature, #centered mean temperature
+    nino_c = nino34_12s - mean_nino #centered Niño 3.4 anomaly
   ) %>%
   tidyr::drop_na(
-    brote_p75, brote_p90, nino34_12s, Rain_acc3, Temperature,
-    Rain_lag2, Rain_lag3, Rain_lag4,
-    Temperature_lag2, Temperature_lag3, Temperature_lag4,
+    brote_p75, brote_p90, nino_c, Rain100, Temp_c,
+    Rain_lag2_100, Rain_lag3_100, Rain_lag4_100,
+    Temp_lag2_c, Temp_lag3_c, Temp_lag4_c,
     ln_casos_semana_anterior
   )
 
@@ -65,6 +73,8 @@ print(
 
 # main models with p75 and p90 ----
 
+#glmmTMB 1.1.14 supports priors, but rescaling removed the extreme coefficients
+#so the reported models retain maximum likelihood estimation
 #sensitivity models use a linear annual trend to stabilize estimation and allow temporal validation
 #inertia-only reference for p75
 m_p75_inercia <- glmmTMB::glmmTMB(
@@ -81,9 +91,9 @@ m_p75_inercia <- glmmTMB::glmmTMB(
 #p75 with the original climate covariates
 m_p75_original <- glmmTMB::glmmTMB(
   brote_p75 ~
-    nino34_12s +
-    Rain_acc3 +
-    Temperature +
+    nino_c +
+    Rain100 +
+    Temp_c +
     ln_casos_semana_anterior +
     mes +
     year_num +
@@ -96,9 +106,9 @@ m_p75_original <- glmmTMB::glmmTMB(
 #p75 with rainfall and temperature lagged 2 to 4 weeks
 m_p75_lags <- glmmTMB::glmmTMB(
   brote_p75 ~
-    nino34_12s +
-    Rain_lag2 + Rain_lag3 + Rain_lag4 + #rainfall lags
-    Temperature_lag2 + Temperature_lag3 + Temperature_lag4 + #temperature lags
+    nino_c +
+    Rain_lag2_100 + Rain_lag3_100 + Rain_lag4_100 + #rainfall lags per 100 mm
+    Temp_lag2_c + Temp_lag3_c + Temp_lag4_c + #centered temperature lags
     ln_casos_semana_anterior +
     mes +
     year_num +
@@ -123,9 +133,9 @@ m_p90_inercia <- glmmTMB::glmmTMB(
 #p90 with the original climate covariates
 m_p90_original <- glmmTMB::glmmTMB(
   brote_p90 ~
-    nino34_12s +
-    Rain_acc3 +
-    Temperature +
+    nino_c +
+    Rain100 +
+    Temp_c +
     ln_casos_semana_anterior +
     mes +
     year_num +
@@ -138,9 +148,9 @@ m_p90_original <- glmmTMB::glmmTMB(
 #p90 with rainfall and temperature lagged 2 to 4 weeks
 m_p90_lags <- glmmTMB::glmmTMB(
   brote_p90 ~
-    nino34_12s +
-    Rain_lag2 + Rain_lag3 + Rain_lag4 + #rainfall lags
-    Temperature_lag2 + Temperature_lag3 + Temperature_lag4 + #temperature lags
+    nino_c +
+    Rain_lag2_100 + Rain_lag3_100 + Rain_lag4_100 + #rainfall lags per 100 mm
+    Temp_lag2_c + Temp_lag3_c + Temp_lag4_c + #centered temperature lags
     ln_casos_semana_anterior +
     mes +
     year_num +
@@ -154,11 +164,18 @@ m_p90_lags <- glmmTMB::glmmTMB(
 
 #convergence and Hessian checks for every main model
 diagnostico_modelo <- function(modelo) {
+  coeficientes <- glmmTMB::fixef(modelo)$cond
+  errores <- tryCatch(
+    sqrt(diag(stats::vcov(modelo)$cond)),
+    error = function(e) rep(NA_real_, length(coeficientes))
+  )
   tibble::tibble(
     pdHess = isTRUE(modelo$sdr$pdHess), #TRUE means a positive-definite Hessian
     convergencia = modelo$fit$convergence, #0 means successful convergence
     gradiente_max = max(abs(modelo$sdr$gradient), na.rm = TRUE), #large values flag numerical problems
-    coef_max_abs = max(abs(glmmTMB::fixef(modelo)$cond), na.rm = TRUE) #very large values flag separation
+    coef_max_abs = max(abs(coeficientes), na.rm = TRUE), #very large values flag separation
+    coef_max_term = names(coeficientes)[which.max(abs(coeficientes))], #term responsible for the maximum
+    se_na = anyNA(errores) #undefined standard errors flag a singular Hessian
   )
 }
 
@@ -228,9 +245,12 @@ comparacion_modelos <- purrr::map_dfr(modelos_comparacion, \(x) {
 
 print(comparacion_modelos, width = Inf)
 
-#likelihood ratio tests for the climate block and the lag structure
-print(stats::anova(m_p75_inercia, m_p75_original, m_p75_lags))
-print(stats::anova(m_p90_inercia, m_p90_original, m_p90_lags))
+#likelihood ratio tests against the inertia-only reference
+#original and lagged climate models are not nested; their comparison uses AIC
+print(stats::anova(m_p75_inercia, m_p75_original))
+print(stats::anova(m_p75_inercia, m_p75_lags))
+print(stats::anova(m_p90_inercia, m_p90_original))
+print(stats::anova(m_p90_inercia, m_p90_lags))
 
 # odds ratios for the lagged climate terms ----
 
@@ -254,8 +274,8 @@ or_rezagos <- dplyr::bind_rows(
     dplyr::mutate(umbral = "p90")
 ) %>%
   dplyr::filter(term %in% c(
-    "Rain_lag2", "Rain_lag3", "Rain_lag4",
-    "Temperature_lag2", "Temperature_lag3", "Temperature_lag4"
+    "Rain_lag2_100", "Rain_lag3_100", "Rain_lag4_100",
+    "Temp_lag2_c", "Temp_lag3_c", "Temp_lag4_c"
   )) %>%
   dplyr::select(umbral, term, estimate, conf.low, conf.high, p.value)
 
@@ -315,14 +335,14 @@ print(validacion_temporal, width = Inf)
 
 #model without previous-week cases and its diagnostics ----
 
-#this model is used to check the stability of the Niño 3.4 estimate
+#this model uses year_num, as the other sensitivity models, and scaled climate covariates
 m_p75_sin_inercia <- glmmTMB::glmmTMB(
   brote_p75 ~
-    nino34_12s +
-    Rain_acc3 +
-    Temperature +
+    nino_c +
+    Rain100 +
+    Temp_c +
     mes +
-    year + #year factor used in the original main model
+    year_num + #linear trend used in the sensitivity models
     (1 | DEPARTAMENTO) +
     ar1(tiempo_factor + 0 | DEPARTAMENTO),
   family = binomial(link = "logit"),
@@ -340,6 +360,6 @@ print(
     exponentiate = TRUE,
     conf.int = TRUE
   ) %>%
-    dplyr::filter(term == "nino34_12s"),
+    dplyr::filter(term == "nino_c"),
   width = Inf
 )
