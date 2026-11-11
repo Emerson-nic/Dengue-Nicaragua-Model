@@ -65,7 +65,7 @@
 \maketitle
 
 \begin{abstract}
-Este documento presenta la formulación metodológica, especificación matemática, resultados empíricos y análisis de residuales para el modelamiento de la probabilidad de brotes de dengue en los 18 departamentos de Nicaragua durante el período 2014-2022. Utilizando un Modelo Lineal Mixto Generalizado (GLMM) con distribución binomial y función de enlace logit, se incorporó un intercepto aleatorio departamental y una estructura autorregresiva temporal de primer orden ($\text{AR}(1)$) para aislar la inercia epidémica y evaluar el impacto de variables climáticas (precipitación acumulada y temperatura) y el fenómeno de El Niño. Los resultados muestran una persistencia epidémica semanal extrema ($\rho = 0{,}96$), un efecto multiplicativo dominante de la inercia de casos previos ($\text{OR} \approx 16{,}77$ ante duplicación de casos), una asociación positiva de la precipitación acumulada y de la temperatura media, mientras que la anomalía de Niño 3.4 no alcanzó significancia estadística. Un análisis exploratorio de sensibilidad con umbral p90 y rezagos climáticos de 2 a 4 semanas mostró que el bloque climático original mejora el ajuste y la discriminación temporal de forma modesta, mientras que los rezagos específicos no aportan una mejora estable; por tanto, la evidencia respalda un aporte climático condicionado a la inercia epidémica y no un efecto aislado.
+Este documento presenta la formulación metodológica, especificación matemática, resultados empíricos y análisis de residuales para el modelamiento de la probabilidad de brotes de dengue en los 18 departamentos de Nicaragua durante el período 2014-2022. Utilizando un Modelo Lineal Mixto Generalizado (GLMM) con distribución binomial y función de enlace logit, se incorporó un intercepto aleatorio departamental y una estructura autorregresiva temporal de primer orden ($\text{AR}(1)$) para aislar la inercia epidémica y evaluar el impacto de variables climáticas (precipitación acumulada y temperatura) y el fenómeno de El Niño. Los resultados muestran una persistencia epidémica semanal extrema ($\rho = 0{,}96$), un efecto multiplicativo dominante de la inercia de casos previos ($\text{OR} \approx 16{,}77$ ante duplicación de casos), una asociación positiva de la precipitación acumulada y de la temperatura media, mientras que la anomalía de Niño 3.4 no alcanzó significancia estadística. Un análisis exploratorio de sensibilidad con umbral p90 y rezagos climáticos de 2 a 4 semanas mostró que el bloque climático original se asocia con el brote una vez controlada la inercia ($\Delta\text{AIC} = 14{,}8$ en p75 y $5{,}7$ en p90), pero no mejora de forma apreciable la discriminación fuera de muestra ($\Delta\text{AUC} = +0{,}0002$ y $+0{,}0004$, respectivamente); los rezagos específicos no aportaron una mejora estable. Por tanto, la evidencia respalda una asociación climática condicionada a la inercia epidémica, con un aporte predictivo casi nulo y sin efecto aislado.
 \end{abstract}
 
 \newpage
@@ -152,7 +152,7 @@ A partir de las coordenadas departamentales (Tabla~\ref{tab:coords_deptos}), se 
 
 \medskip
 
-La variable explicada corresponde al evento binario de $\text{brote}_{it}$, definida como $1$ en aquellas semanas epidemiológicas donde la incidencia superó el percentil 75 empírico calculado dentro de cada departamento sobre toda su serie 2014--2022 y no dentro de cada semana epidemiológica, siguiendo el criterio de canal endémico establecido por la \textcite{paho2002modulos}. El umbral se redondeó hacia abajo al entero más cercano con \texttt{floor()} para respetar la naturaleza discreta de \texttt{dengue\_total}. La anomalía macroclimática de El Niño se incorporó como la media móvil de 12 semanas de la anomalía de la temperatura superficial del mar en la región Niño 3.4 (\texttt{nino34\_12s}), construida a partir de los índices semanales OISST v2.1 del \textcite{noaa_cpc_weekly_sst}, con período base 1991--2020. La misma serie \texttt{nino34\_12s} se utilizó en todas las estimaciones, incluidas las Tablas~\ref{tab:modelo_completo} y~\ref{tab:resultados}. El resto de covariables son la precipitación acumulada de tres semanas (\texttt{Rain\_acc3}), la temperatura media semanal (\texttt{Temperature}), la inercia epidémica capturada mediante el logaritmo natural de los casos de la semana anterior más uno, $\ln(\text{casos}_{t-1}+1)$, denotado \texttt{ln\_casos\_semana\_anterior}, y controles temporales de estacionalidad mensual (\texttt{mes}) y tendencia anual (\texttt{year}).
+La variable explicada corresponde al evento binario de $\text{brote}_{it}$, definida como $1$ en aquellas semanas epidemiológicas donde la incidencia superó el percentil 75 empírico calculado dentro de cada departamento sobre toda su serie 2014--2022 y no dentro de cada semana epidemiológica, siguiendo el criterio de canal endémico establecido por la \textcite{paho2002modulos}. El umbral se redondeó hacia abajo al entero más cercano con \texttt{floor()} para respetar la naturaleza discreta de \texttt{dengue\_total}. La anomalía macroclimática de El Niño se incorporó como la media móvil de 12 semanas de la anomalía de la temperatura superficial del mar en la región Niño 3.4 (\texttt{nino34\_12s}), construida a partir de los índices semanales OISST v2.1 del \textcite{noaa_cpc_weekly_sst}, con período base 1991--2020. La misma serie \texttt{nino34\_12s} se utilizó en todas las estimaciones, incluidas las Tablas~\ref{tab:modelo_completo} y~\ref{tab:resultados}. El resto de covariables son la precipitación acumulada de tres semanas (\texttt{Rain\_acc3}), la temperatura media semanal (\texttt{Temperature}), la inercia epidémica capturada mediante el logaritmo natural de los casos de la semana anterior más uno, $\ln(\text{casos}_{t-1}+1)$, denotado \texttt{ln\_casos\_semana\_anterior}, y controles temporales de estacionalidad mensual (\texttt{mes}) y tendencia anual (\texttt{year}). En el análisis de sensibilidad, la lluvia se expresó por 100~mm, la temperatura y la anomalía de Niño 3.4 se centraron en su media; este reescalamiento no altera el ajuste pero evita inestabilidad numérica. Las AUC se calcularon con predicciones poblacionales, es decir, fijando los efectos aleatorios en cero (\texttt{re.form = NA}), de modo que comparan únicamente la discriminación de los efectos fijos.
 
 \medskip
 
@@ -357,7 +357,7 @@ Es decir, duplicar los casos de la semana previa se asocia con un aumento de apr
 \label{fig:brote_1}
 \end{figure}
 
-Como se observa en la Figura \ref{fig:brote_1}, la probabilidad de brote aumenta con la precipitación acumulada y con la temperatura media. En el panel superior, la relación con la precipitación es no lineal: el efecto es más pronunciado en el tramo inicial y la banda de confianza se amplía hacia valores extremos. En el panel central, el efecto de la temperatura es positivo y más lineal. En el panel inferior, la curva de Niño 3.4 es casi plana y la banda de confianza es amplia, lo que refleja la falta de una asociación independiente robusta.
+Como se observa en la Figura \ref{fig:brote_1}, la probabilidad de brote aumenta con la precipitación acumulada y con la temperatura media. En el panel superior, la relación con la precipitación y temperatura es no lineal: el efecto es más pronunciado en el tramo inicial y la banda de confianza se amplía hacia valores extremos. En el panel central, el efecto de la temperatura es positivo y más lineal. En el panel inferior, la curva de Niño 3.4 es casi plana y la banda de confianza es amplia, lo que refleja la falta de una asociación independiente robusta.
 
 \begin{figure}[H]
 \centering
@@ -371,11 +371,11 @@ Por su parte, la Figura \ref{fig:dengue_plot} muestra un marcado umbral de quieb
 \subsection{Análisis de Sensibilidad: Umbral p90, Rezagos Climáticos y Validación Temporal}
 \label{sec:sensibilidad}
 
-Como análisis exploratorio \textit{post hoc}, se evaluó la robustez del modelo ante dos decisiones de especificación: el umbral que define el brote y la forma de incorporar el clima. Se compararon los umbrales p75 y p90, y para cada uno se ajustaron tres modelos logit: uno solo con inercia, uno con las covariables climáticas originales (\texttt{nino34\_12s}, \texttt{Rain\_acc3} y \texttt{Temperature}) y uno con rezagos separados de lluvia y temperatura en las semanas $t-2$, $t-3$ y $t-4$. Todos los modelos conservaron la inercia epidémica, la estacionalidad mensual, el intercepto aleatorio departamental y la estructura $\text{AR}(1)$.
+Como análisis exploratorio \textit{post hoc}, se evaluó la robustez del modelo ante dos decisiones de especificación: el umbral que define el brote y la forma de incorporar el clima. Se compararon los umbrales p75 y p90, y para cada uno se ajustaron tres modelos logit: uno solo con inercia, uno con las covariables climáticas originales (\texttt{nino34\_12s}, \texttt{Rain\_acc3} y \texttt{Temperature}) y uno con rezagos separados de lluvia y temperatura en las semanas $t-2$, $t-3$ y $t-4$. Todos los modelos conservaron la inercia epidémica, la estacionalidad mensual, el intercepto aleatorio departamental y la estructura $\text{AR}(1)$. Los rezagos se construyeron sobre la lluvia semanal (\texttt{Rain}), no sobre la suma móvil \texttt{Rain\_acc3}; por ello, las ventanas de los rezagos no se traslapan. La versión utilizada de \texttt{glmmTMB} (1.1.14) permite priors débiles sobre efectos fijos; se verificó su disponibilidad, pero el reescalamiento de las covariables eliminó los coeficientes extremos, por lo que los modelos reportados se estimaron por máxima verosimilitud.
 
 \medskip
 
-Para estabilizar la estimación y permitir la validación temporal, en esta sección se reemplazó el factor año por una tendencia anual lineal centrada en 2014 (\texttt{year\_num}); por esa razón, los valores de AIC no son directamente comparables con la Tabla~\ref{tab:modelo_completo}. Además, al construir los rezagos se perdieron tres semanas por departamento, de modo que la muestra común de esta sensibilidad es de 8.208 departamento-semanas: 2.047 brotes con p75 (24,9\%) y 821 con p90 (10,0\%).
+Para estabilizar la estimación y permitir la validación temporal, en esta sección se reemplazó el factor año por una tendencia anual lineal centrada en 2014 (\texttt{year\_num}); por esa razón, los valores de AIC no son directamente comparables con la Tabla~\ref{tab:modelo_completo}. El panel completo tiene 8.316 departamento-semanas; el modelo principal retiene 8.280 tras construir \texttt{Rain\_acc3} y la inercia (dos semanas por departamento). Al construir el rezago de cuatro semanas se pierden cuatro semanas iniciales adicionales por departamento, de modo que la muestra común de esta sensibilidad es de 8.208 departamento-semanas ($8.280 - 18 \times 4 = 8.208$): 2.047 brotes con p75 (24,9\%) y 821 con p90 (10,0\%).
 
 \begin{table}[htbp]
 	\centering
@@ -391,19 +391,20 @@ Para estabilizar la estimación y permitir la validación temporal, en esta secc
 		p75 clima con rezagos 2--4 & $3640{,}9$ & $6{,}0$ & $0{,}894$ & $+0{,}0021$ \\
 		\midrule
 		p90 solo inercia & $1963{,}8$ & $0{,}0$ & $0{,}923$ & $0{,}0$ \\
-		p90 clima original & $1791{,}7$ & $172{,}1$ & $0{,}917$ & $-0{,}0059$ \\
-		p90 clima con rezagos 2--4 & $1377{,}4$ & $586{,}4$ & $0{,}912$ & $-0{,}0105$ \\
+		p90 clima original & $1958{,}1$ & $5{,}7$ & $0{,}923$ & $+0{,}0004$ \\
+		p90 clima con rezagos 2--4 & $1956{,}2$ & $7{,}7$ & $0{,}920$ & $-0{,}0027$ \\
 		\midrule
 		\multicolumn{5}{l}{\textbf{Nota:} $\Delta$AIC y $\Delta$AUC se calculan contra el modelo solo inercia del mismo umbral.} \\
+		\multicolumn{5}{l}{El clima original y el de rezagos no están anidados; su comparación directa se basa en AIC.} \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
-En el umbral p75, el clima original mejoró el AIC en $14{,}8$ puntos ($\chi^2 = 20{,}82$ con $3$ grados de libertad; $p < 0{,}001$), pero no aumentó la AUC poblacional. Añadir rezagos tampoco mejoró el ajuste respecto al clima original ($\chi^2 = 0{,}00$ con $4$ grados de libertad; $p = 1{,}000$). En el umbral p90, el clima original redujo el AIC en $172{,}1$ puntos ($\chi^2 = 178{,}14$ con $3$ grados de libertad; $p < 0{,}001$), mientras que el modelo con rezagos mostró una reducción mucho mayor ($\Delta\text{AIC} = 586{,}4$; $\chi^2 = 422{,}23$ con $4$ grados de libertad; $p < 0{,}001$).
+En el umbral p75, el clima original mejoró el AIC en $14{,}8$ puntos ($\chi^2 = 20{,}82$ con $3$ grados de libertad; $p < 0{,}001$), pero no aumentó la AUC poblacional ($0{,}890$ frente a $0{,}892$; $\Delta\text{AUC} = -0{,}0015$) y la AUC de prueba fue prácticamente idéntica ($0{,}869$ frente a $0{,}869$; $\Delta\text{AUC} = +0{,}0002$). El modelo con rezagos también mejoró el AIC frente a inercia ($\Delta\text{AIC} = 6{,}0$; $\chi^2 = 20{,}04$ con $7$ grados de libertad; $p = 0{,}005$), pero no superó al clima original: su AIC fue $8{,}8$ puntos mayor ($3640{,}9$ frente a $3632{,}1$). En el umbral p90, el clima original redujo el AIC en $5{,}7$ puntos ($\chi^2 = 11{,}73$ con $3$ grados de libertad; $p = 0{,}008$) y el de rezagos en $7{,}7$ ($\chi^2 = 21{,}65$ con $7$ grados de libertad; $p = 0{,}003$); sin embargo, sus AUC poblacionales fueron $0{,}923$ y $0{,}920$, frente a $0{,}923$ con inercia. La prueba de razón de verosimilitud contra inercia usa $7$ grados de libertad en el modelo de rezagos (Niño 3.4 más seis rezagos), no $6$, porque el modelo de referencia no contiene ningún término climático. Como el clima original y el de rezagos no están anidados, no se aplicó una prueba de razón de verosimilitud entre ellos; la comparación descriptiva de AIC favorece al clima original en p75 ($\Delta\text{AIC} = 8{,}8$) y ligeramente a los rezagos en p90 ($\Delta\text{AIC} = 1{,}9$), sin que esto implique superioridad formal.
 
 \medskip
 
-Ese último valor requiere cautela. Los modelos p90 presentaron coeficientes máximos de $204$ y $933$ en escala log-odds para el clima original y con rezagos, respectivamente. La función \texttt{diagnose()} de \texttt{glmmTMB} advirtió separación casi completa en ambos. Por tanto, el \textit{log-likelihood} del modelo p90 con rezagos está inflado por una casi-separación y no debe interpretarse como evidencia de un mejor mecanismo climático. La Tabla~\ref{tab:validacion_temporal} ayuda a separar el ajuste interno de la capacidad de discriminación fuera de muestra.
+Los coeficientes máximos de los modelos de sensibilidad correspondieron al intercepto, no al bloque climático: $20{,}3$ en p75 original, $25{,}2$ en p90 original y $25{,}5$ en p90 con rezagos. Todos los errores estándar fueron finitos. El reescalamiento de lluvia, temperatura y Niño 3.4 eliminó la inestabilidad numérica que, sin escalar, producía un intercepto de $204$ y errores estándar indefinidos en p90. Aun así, \texttt{diagnose()} mantiene advertencias por el intercepto y la inercia en p90; los OR climáticos son estimables, pero la comparación predictiva no muestra una ventaja relevante. La Tabla~\ref{tab:validacion_temporal} confirma que la ganancia fuera de muestra es despreciable.
 
 \begin{table}[htbp]
 	\centering
@@ -419,15 +420,15 @@ Ese último valor requiere cautela. Los modelos p90 presentaron coeficientes má
 		p75 clima con rezagos 2--4 & $0{,}901$ & $0{,}873$ & $+0{,}0039$ \\
 		\midrule
 		p90 solo inercia & $0{,}921$ & $0{,}936$ & $0{,}0$ \\
-		p90 clima original & $0{,}921$ & $0{,}944$ & $+0{,}0082$ \\
-		p90 clima con rezagos 2--4 & $0{,}908$ & $0{,}935$ & $-0{,}0007$ \\
+		p90 clima original & $0{,}920$ & $0{,}937$ & $+0{,}0004$ \\
+		p90 clima con rezagos 2--4 & $0{,}916$ & $0{,}930$ & $-0{,}0065$ \\
 		\midrule
-		\multicolumn{4}{l}{\textbf{Nota:} el modelo p90 con rezagos no alcanzó una Hessiana definida en la validación.} \\
+		\multicolumn{4}{l}{\textbf{Nota:} todos los modelos de validación convergieron con Hessiana definida.} \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
-La validación temporal mostró que el clima original en p90 fue el único bloque que mejoró de forma apreciable la discriminación fuera de muestra (AUC $0{,}944$ frente a $0{,}936$ con inercia sola; $\Delta\text{AUC} = +0{,}0082$). En p75, los rezagos produjeron una mejora mínima ($\Delta\text{AUC} = +0{,}0039$) y el clima original no mejoró la AUC de prueba. En p90, el modelo con rezagos no superó a la inercia ($\Delta\text{AUC} = -0{,}0007$) y además no convergió a una Hessiana definida. En conjunto, la evidencia favorece un aporte modesto del bloque climático original, pero no permite sostener que los rezagos de 2 a 4 semanas añadan información estable.
+La validación temporal mostró que ninguna especificación climática mejoró de forma apreciable la discriminación fuera de muestra. En p75, el clima original dejó la AUC de prueba en $0{,}869$ ($\Delta\text{AUC} = +0{,}0002$) y los rezagos produjeron una mejora mínima ($0{,}873$; $\Delta\text{AUC} = +0{,}0039$). En p90, el clima original pasó de $0{,}936$ a $0{,}937$ ($\Delta\text{AUC} = +0{,}0004$) y los rezagos redujeron la AUC a $0{,}930$ ($\Delta\text{AUC} = -0{,}0065$). En conjunto, la evidencia indica una asociación climática estadísticamente detectable, pero un aporte predictivo casi nulo, y no permite sostener que los rezagos de 2 a 4 semanas añadan información estable.
 
 \begin{table}[htbp]
 	\centering
@@ -439,23 +440,23 @@ La validación temporal mostró que el clima original en p90 fue el único bloqu
 		\toprule
 		\textbf{Rezago} & \textbf{p75: OR (IC 95\%)} & \textbf{p90: OR (IC 95\%)} \\
 		\midrule
-		Lluvia $t-2$ & $1{,}00$ (1,00--1,01) & $1{,}05$ (0,94--1,17) \\
-		Lluvia $t-3$ & $1{,}00$ (1,00--1,01) & $0{,}902$ (0,862--0,944) \\
-		Lluvia $t-4$ & $0{,}999$ (0,996--1,00) & $0{,}940$ (0,907--0,976) \\
-		Temperatura $t-2$ & $0{,}990$ (0,820--1,19) & $114$ (0,37--35111) \\
-		Temperatura $t-3$ & $1{,}15$ (0,937--1,42) & $121$ (3,73--3909) \\
-		Temperatura $t-4$ & $0{,}925$ (0,769--1,11) & $0{,}926$ (0,001--780) \\
+		Lluvia $t-2$ & $1{,}30$ (0,97--1,75) & $1{,}32$ (0,92--1,90) \\
+		Lluvia $t-3$ & $1{,}55$ (1,17--2,06) & $0{,}970$ (0,689--1,37) \\
+		Lluvia $t-4$ & $0{,}872$ (0,657--1,16) & $0{,}708$ (0,503--0,996) \\
+		Temperatura $t-2$ & $0{,}990$ (0,820--1,19) & $1{,}22$ (0,931--1,59) \\
+		Temperatura $t-3$ & $1{,}15$ (0,937--1,42) & $1{,}23$ (0,915--1,65) \\
+		Temperatura $t-4$ & $0{,}925$ (0,769--1,11) & $0{,}890$ (0,686--1,15) \\
 		\midrule
-		\multicolumn{3}{p{14.5cm}}{\footnotesize \textbf{Nota:} en p75 los OR son estables y cercanos a la nulidad; en p90 los intervalos de temperatura reflejan casi-separación.} \\
+		\multicolumn{3}{p{14.5cm}}{\footnotesize \textbf{Nota:} los OR de lluvia se expresan por 100~mm y los de temperatura por $1~^\circ$C. Los rezagos no muestran un patrón consistente entre umbrales; en p90 el modelo conserva advertencias por el intercepto y la inercia.} \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
-Los OR de la Tabla~\ref{tab:or_rezagos} confirman esa lectura. En el modelo p75, estable, todos los rezagos de lluvia y temperatura son cercanos a la nulidad, con intervalos estrechos. En p90, los rezagos de lluvia $t-3$ y $t-4$ sugieren odds menores, pero sus estimaciones provienen de un modelo con casi-separación, igual que los intervalos de temperatura, que abarcan varios órdenes de magnitud. Por ello, no se interpretan como efectos específicos de rezago.
+Los OR de la Tabla~\ref{tab:or_rezagos} muestran un patrón poco consistente. En p75, el rezago de lluvia $t-3$ fue el único que excluyó la unidad (OR $1{,}55$; IC 95\% $1{,}17$--$2{,}06$), mientras que $t-2$, $t-4$ y los rezagos de temperatura fueron compatibles con la nulidad. En p90, lluvia $t-4$ mostró un OR de $0{,}708$ (IC 95\% $0{,}503$--$0{,}996$), pero el modelo conserva advertencias por el intercepto y la inercia y su AUC de prueba no mejora; por ello, no se interpreta como un efecto específico de rezago. Los intervalos de temperatura en p90 son más amplios, aunque ya no abarcan varios órdenes de magnitud como en la especificación sin escalar.
 
 \medskip
 
-En síntesis, el análisis de sensibilidad sostiene que el bloque climático original aporta información medible sobre la probabilidad de brote, especialmente en el umbral p90 y en la validación temporal, pero no permite afirmar que los rezagos de 2 a 4 semanas mejoren de forma estable al modelo ni que el clima actúe como un efecto aislado de la inercia epidémica.
+En síntesis, el análisis de sensibilidad sostiene que el bloque climático original se asocia con la probabilidad de brote una vez controlada la inercia ($\Delta\text{AIC} = 14{,}8$ en p75 y $5{,}7$ en p90), pero no mejora la discriminación fuera de muestra ($\Delta\text{AUC} = +0{,}0002$ y $+0{,}0004$). Los rezagos de 2 a 4 semanas no muestran un patrón estable. Por tanto, la evidencia respalda una asociación estadísticamente detectable con un aporte predictivo casi nulo, no un mecanismo de rezago ni un efecto aislado de la inercia epidémica.
 
 \section{Residuales y Diagnóstico del Modelo}
 
@@ -495,7 +496,7 @@ Adicionalmente, la evaluación de autocorrelación temporal sobre los residuales
 
 \section{Discusión}
 
-El modelo principal mostró un ajuste adecuado al superar las pruebas de simulación de residuales, sobredispersión y autocorrelación temporal. El análisis exploratorio de sensibilidad evaluó un umbral alternativo p90 y rezagos climáticos de 2 a 4 semanas. Los resultados indican que el bloque climático original aporta información medible, sobre todo en el umbral p90 y en la validación temporal, pero que los rezagos específicos no mejoran de forma estable al modelo y que los modelos p90 con rezagos presentan casi-separación. Por tanto, la calibración del umbral sigue siendo una línea de trabajo futura, pero ya no como una hipótesis sin explorar: el umbral p90 se evaluó y no alteró la conclusión central de que la inercia epidémica domina la probabilidad de brote.
+El modelo principal mostró un ajuste adecuado al superar las pruebas de simulación de residuales, sobredispersión y autocorrelación temporal. El análisis exploratorio de sensibilidad evaluó un umbral alternativo p90 y rezagos climáticos de 2 a 4 semanas. Los resultados indican que el bloque climático original se asocia con el brote una vez controlada la inercia ($\Delta\text{AIC} = 14{,}8$ en p75 y $5{,}7$ en p90), pero no mejora la discriminación fuera de muestra ($\Delta\text{AUC} = +0{,}0002$ y $+0{,}0004$), y que los rezagos específicos no muestran un patrón estable. Por tanto, la calibración del umbral sigue siendo una línea de trabajo futura, pero ya no como una hipótesis sin explorar: el umbral p90 se evaluó y no alteró la conclusión central de que la inercia epidémica domina la probabilidad de brote y de que la asociación climática tiene un aporte predictivo casi nulo.
 
 \medskip
 
@@ -515,11 +516,11 @@ Tercero, el panel presentó 36 departamento-semanas sin registro (0,4\% del pane
 
 \medskip
 
-Cuarto, la inercia epidémica de la semana anterior absorbe gran parte de la señal explicativa. El modelo de sensibilidad sin \texttt{ln\_casos\_semana\_anterior} mostró separación casi completa: el coeficiente máximo absoluto fue $67{,}8$ y el OR de Niño 3.4 fue $5{,}28$ con un intervalo de confianza de $0{,}010$ a $2918$. Aunque la Hessiana fue definida y el algoritmo convergió, \texttt{glmmTMB::diagnose()} advirtió coeficientes y estadísticos $z$ anormalmente grandes, por lo que esa estimación no debe interpretarse como un efecto sustantivo. Esto indica que las asociaciones climáticas estimadas en el modelo principal deben interpretarse condicionadas a la memoria epidemiológica y no como efectos aislados.
+Cuarto, la inercia epidémica de la semana anterior absorbe gran parte de la señal explicativa. El modelo de sensibilidad sin \texttt{ln\_casos\_semana\_anterior} usa \texttt{year\_num}, a diferencia del factor año del modelo principal, y covariables climáticas escaladas. Con esta especificación, el OR de Niño 3.4 fue $1{,}19$ (IC 95\% $0{,}12$--$11{,}3$; $p = 0{,}882$), sin evidencia de asociación, y el coeficiente máximo absoluto fue $32{,}0$ en el intercepto. Aunque la Hessiana fue definida, \texttt{glmmTMB::diagnose()} advirtió coeficientes grandes en el intercepto y los meses, por lo que esa estimación no debe interpretarse como un efecto sustantivo. La diferencia frente a especificaciones previas con el factor año se explica por el cambio a \texttt{year\_num}. Esto indica que las asociaciones climáticas estimadas en el modelo principal deben interpretarse condicionadas a la memoria epidemiológica y no como efectos aislados.
 
 \medskip
 
-Quinto, los modelos p90 con rezagos presentaron casi-separación. El modelo p90 con clima original alcanzó un coeficiente máximo de $204$ y el modelo con rezagos de $933$; este último mostró además una Hessiana no definida en la validación temporal. Por ello, sus reducciones de AIC y sus OR por rezago no se consideran evidencia estable de un mejor mecanismo climático. La comparación más informativa es la del clima original en p90, que mejoró la AUC de prueba de $0{,}936$ a $0{,}944$, una diferencia modesta.
+Quinto, los modelos p90 conservan advertencias de \texttt{diagnose()} por el intercepto y la inercia, no por los coeficientes climáticos. Sin reescalar, el intercepto alcanzaba $204$ y los errores estándar eran indefinidos; tras expresar la lluvia por 100~mm y centrar temperatura y Niño 3.4, el coeficiente máximo fue $25{,}2$ (intercepto) y todos los errores estándar fueron finitos. Aun así, la ganancia predictiva fue nula: el clima original en p90 cambió la AUC de prueba de $0{,}936$ a $0{,}937$ ($\Delta\text{AUC} = +0{,}0004$) y los rezagos la redujeron a $0{,}930$ ($\Delta\text{AUC} = -0{,}0065$). Por ello, sus reducciones de AIC y sus OR por rezago no se consideran evidencia estable de un mejor mecanismo climático. La comparación más informativa es la de p75 con clima original: asociación estadísticamente detectable ($\Delta\text{AIC} = 14{,}8$) pero sin mejora de la AUC, ni en muestra ($\Delta\text{AUC} = -0{,}0015$) ni en prueba ($\Delta\text{AUC} = +0{,}0002$).
 
 \medskip
 
@@ -532,14 +533,14 @@ Con el fin de facilitar la replicación y la extensión de este análisis, todos
 \begin{itemize}
 	\item El script de limpieza y construcción del panel (\texttt{01-cleaning.R}), que documenta la descarga de los registros epidemiológicos de OpenDengue \parencite{clarke2025opendengue}, la extracción de las series climáticas de \textcite{openmeteo_historical}.
 	\item El script de modelado (\texttt{03-GLMM.R}), que especifica los \textit{Generalized Linear Mixed Models} en \texttt{glmmTMB} \parencite{brooks2017glmmtmb}, la construcción de los umbrales departamentales (percentil 75), el cálculo de las variables de inercia epidémica y precipitación acumulada, y los diagnósticos de residuales con \texttt{DHARMa} \parencite{hartig2022dharma}.
-	\item El script de sensibilidad (\texttt{04-sensitivity.R}), que reproduce el umbral alternativo p90, los rezagos climáticos de 2 a 4 semanas, la comparación inercia--clima, la validación temporal 2014--2019/2020--2022 y los diagnósticos de convergencia y separación.
+	\item El script de sensibilidad (\texttt{04-sensitivity.R}), que reproduce el umbral alternativo p90, los rezagos climáticos de 2 a 4 semanas, la comparación inercia--clima, la validación temporal 2014--2019/2020--2022 y los diagnósticos de convergencia, coeficientes máximos y errores estándar.
 	\item El archivo \texttt{main.tex} y la base bibliográfica \texttt{references.bib} que generan este documento.
 	\item La base procesada final (\texttt{dengue\_dataframe.csv} y \texttt{Etapas\_dengue.csv}), lista para reproducir las estimaciones reportadas en la Tabla~\ref{tab:modelo_completo}.
 \end{itemize}
 
 \section{Conclusiones}
 
-Este estudio aporta evidencia de que la probabilidad de que un departamento en Nicaragua detone un brote de dengue responde a una interacción entre la memoria epidemiológica local y choques climáticos exógenos. Al aislar la elevada persistencia del contagio semanal mediante una estructura autorregresiva ($\rho = 0.96$), se observó que la precipitación acumulada en tres semanas y la temperatura media se asocian positivamente con el riesgo de brote. No obstante, el análisis de sensibilidad mostró que el bloque climático original aporta información medible sobre la inercia (mejor AIC y una mejora modesta de la AUC temporal en el umbral p90), mientras que los rezagos específicos de 2 a 4 semanas no mejoraron de forma estable y los modelos p90 con rezagos presentaron casi-separación. Por tanto, los resultados respaldan un aporte climático condicionado a la inercia epidémica, no un efecto aislado ni una capacidad predictiva robusta. En contraste, la anomalía de Niño 3.4 no mostró una asociación independiente robusta una vez controlados la estacionalidad mensual y la tendencia anual.
+Este estudio aporta evidencia de que la probabilidad de que un departamento en Nicaragua detone un brote de dengue responde a una interacción entre la memoria epidemiológica local y choques climáticos exógenos. Al aislar la elevada persistencia del contagio semanal mediante una estructura autorregresiva ($\rho = 0.96$), se observó que la precipitación acumulada en tres semanas y la temperatura media se asocian positivamente con el riesgo de brote. No obstante, el análisis de sensibilidad mostró que el bloque climático original se asocia con el brote una vez controlada la inercia ($\Delta\text{AIC} = 14{,}8$ en p75 y $5{,}7$ en p90), pero no mejora la discriminación fuera de muestra ($\Delta\text{AUC} = +0{,}0002$ y $+0{,}0004$); los rezagos específicos de 2 a 4 semanas no mostraron un patrón estable. Por tanto, los resultados respaldan una asociación climática condicionada a la inercia epidémica, con un aporte predictivo casi nulo, no un efecto aislado ni una capacidad predictiva robusta. En contraste, la anomalía de Niño 3.4 no mostró una asociación independiente robusta una vez controlados la estacionalidad mensual y la tendencia anual.
 
 \medskip
 
